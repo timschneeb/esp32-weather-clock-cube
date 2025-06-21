@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Firmware Update</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/scripts.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Firmware Update</h1>
+        <div class="card">
+            <form method="POST" action="/update" enctype="multipart/form-data" onsubmit="showProgress()">
+                <input type="file" name="update" accept=".bin" required>
+                <button type="submit">Upload</button>
+                <progress class="progress" max="100" value="0"></progress>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

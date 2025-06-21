@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Configuration</title>
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/scripts.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>ESP32 Configuration</h1>
+        <div class="flex-container">
+            <div class="card">
+                <h3>Settings</h3>
+                <form method="POST" action="/save">
+                    <label for="ssid">WiFi SSID</label>
+                    <input type="text" id="ssid" name="ssid" value="{{ssid}}" required>
+
+                    <label for="pwd">WiFi Password</label>
+                    <input type="password" id="pwd" name="pwd" value="{{pwd}}">
+                    <input type="hidden" name="pwd_exists" value="{{pwd_exists}}">
+
+                    <label for="mqtt">MQTT Server IP</label>
+                    <input type="text" id="mqtt" name="mqtt" value="{{mqtt}}">
+
+                    <label for="mqttport">MQTT Port</label>
+                    <input type="number" id="mqttport" name="mqttport" min="1" max="65535" value="{{mqttport}}">
+
+                    <label for="mqttuser">MQTT Username</label>
+                    <input type="text" id="mqttuser" name="mqttuser" value="{{mqttuser}}">
+
+                    <label for="mqttpass">MQTT Password</label>
+                    <input type="password" id="mqttpass" name="mqttpass" value="{{mqttpass}}">
+                    <input type="hidden" name="mqttpass_exists" value="{{mqttpass_exists}}">
+
+                    <label for="fip">Frigate IP</label>
+                    <input type="text" id="fip" name="fip" value="{{fip}}">
+
+                    <label for="fport">Frigate Port</label>
+                    <input type="number" id="fport" name="fport" min="1" max="65535" value="{{fport}}">
+
+                    <label for="sec">Display Images (seconds)</label>
+                    <input type="number" id="sec" name="sec" min="1" value="{{sec}}" required>
+
+                    <label for="slideshowInterval">Slideshow interval (ms):</label>
+                    <input type="number" id="slideshowInterval" name="slideshowInterval" min="500" max="20000" value="{{slideshowInterval}}">
+
+                    <label for="maxImages">Max Number of Images</label>
+                    <input type="number" id="maxImages" name="maxImages" min="1" max="60" value="{{maxImages}}" required>
+
+                    <label>Mode</label>
+                    <div class="checkbox-group">
+                        <label>{{alertCheckbox}} Alert</label>
+                        <label>{{detectionCheckbox}} Detection</label>
+                    </div>
+
+                    <label for="weatherApiKey">OpenWeatherMap API Key (Free one call API 2.5)</label>
+                    <input type="password" id="weatherApiKey" name="weatherApiKey" value="{{weatherApiKey}}">
+                    <input type="hidden" name="weatherApiKey_exists" value="{{weatherApiKey_exists}}">
+
+                    <label for="weatherCity">City</label>
+                    <input type="text" id="weatherCity" name="weatherCity" value="{{weatherCity}}">
+
+                    <label for="timezone">Timezone UTC Offset</label>
+                    <input type="number" id="timezone" name="timezone" step="1" min="-12" max="12" value="{{timezone}}">
+
+                    <label for="brightness">Screen Brightness (0-255)</label>
+                    <div class="slider-container">
+                        <input type="range" id="brightness" name="brightness" min="0" max="255" value="{{brightness}}" oninput="updateBrightnessOutput(this.value)">
+                        <output id="brightnessValue">{{brightness}}</output>
+                    </div>
+                    
+                    <div class="form-section">
+                      <label style="margin-bottom:8px;">
+                        <input type="checkbox" id="autoBrtEnabled" name="autoBrtEnabled" {{autoBrtEnabled}} onchange="toggleAutoBrtFields()">
+                        Automatically adjust brightness by time
+                      </label>
+                      <div class="auto-brt-fields">
+                        <label for="autoBrtRange">Time (from/to):</label>
+                        <div class="double-slider-box">
+                          <div class="range-slider" id="hour-range-slider">
+                            <input type="range" id="autoBrtStartHr" name="autoBrtStartHr" min="0" max="23" value="{{autoBrtStartHr}}" class="min-val" oninput="updateHourSlider()">
+                            <input type="range" id="autoBrtEndHr" name="autoBrtEndHr" min="0" max="23" value="{{autoBrtEndHr}}" class="max-val" oninput="updateHourSlider()">
+                            <div class="slider-track" id="slider-track"></div>
+                          </div>
+                          <div class="slider-values" id="slider-values">
+                            <span id="rangeStartLabel">{{autoBrtStartHr}}</span> -
+                            <span id="rangeEndLabel">{{autoBrtEndHr}}</span> hours
+                          </div>
+                        </div>
+                      </div>
+                      <label for="autoBrtLvl" style="margin-top:10px;">Brightness during this period (0-255)</label>
+                      <div class="slider-container">
+                        <input type="range" min="0" max="255" name="autoBrtLvl" id="autoBrtLvl" value="{{autoBrtLvl}}" oninput="autoBrtLvlOutput.textContent = this.value">
+                        <output id="autoBrtLvlOutput">{{autoBrtLvl}}</output>
+                      </div>
+                    </div>
+
+                    <button type="submit">Save</button>
+                </form>
+                <button onclick="window.location.href='/update'">Firmware Update</button>
+                <button onclick="window.location.href='/reboot'">Reboot ESP32</button>
+            </div>
+
+            <div class="card">
+                <h3>Memory and Images</h3>
+                <div class="memory-usage">
+                    <p>Total: {{totalBytes}} KB</p>
+                    <p>Used: {{usedBytes}} KB</p>
+                    <p>Free: {{freeBytes}} KB</p>
+                </div>
+                <button onclick="window.location.href='/delete_all'">Delete All Images</button>
+                <h4>Saved Images:</h4>
+                {{imagesList}}
+            </div>
+        </div>
+    </div>
+</body>
+</html>
