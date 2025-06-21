@@ -21,6 +21,7 @@ Features:
 
 ---
 
-![Image-Clock](https://github.com/user-attachments/assets/fe3dccfc-57a9-4856-9149-fed7bcac7817)
+![Image-Clock](https://github.com/user-attachments/assets/957b44dd-ae78-4843-9c73-cd74e6f4e380)
+
 
 
