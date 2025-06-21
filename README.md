@@ -3,6 +3,7 @@ ESP32-S3 firmware for displaying event snapshots from Frigate on a 240x240 displ
 
 **Built for:** 
 **GeekMagic-S3** (based on `esp32-s3-devkitm-1` with 16MB flash + 240x240 TFT display)
+This project is designed to be built using [PlatformIO](https://platformio.org/)
 
 A compact and configurable ESP32-S3 firmware for displaying event snapshots from **Frigate**, weather data, and clock information — all in real time on a 240x240 screen.
 
