@@ -17,6 +17,8 @@ Features:
 - Brightness Control via schedule or manual setting (PWM-based dimming).
 - Web Configuration UI: WiFi, MQTT, Frigate IP, weather API key, display settings, and more.
 - Persistent Storage using Preferences and SPIFFS to save settings and event images.
-- **Fallback AP-mode** if WiFi is not available.
+- Fallback AP-mode if WiFi is not available.
 
 ---
+
+![Image-Clock](https://github.com/user-attachments/assets/594025cd-9397-4365-9d6d-80f1bfe6bb6b)
