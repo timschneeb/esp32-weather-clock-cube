@@ -34,8 +34,7 @@ const unsigned long WIFI_TIMEOUT = 10000;
 const int DEBOUNCE_MS = 250;
 const unsigned long CLOCK_REFRESH_INTERVAL = 1000UL; // 1 second
 const char* daysShort[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-const char* months[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-
+const char* months[] = {"Jan.", "Feb.", "March", "April", "May", "June", "July", "August", "Sept.", "Oct.", "Nov.", "Dec."};
 // Variables
 String mqttUser = "";
 String mqttPass = "";
