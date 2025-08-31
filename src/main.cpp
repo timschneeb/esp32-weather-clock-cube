@@ -1160,7 +1160,7 @@ void setupWiFi() {
     } else {
       Serial.println("WiFi connected to: " + ssid);
       Serial.println("IP address: " + WiFi.localIP().toString());
-      setScreen("statusWiFi", 20, "show_wifi_status");
+      setScreen("statusWiFi", 5, "show_wifi_status");
       tft.setTextColor(TFT_GREEN, TFT_BLACK);
       tft.setTextSize(2);
       tft.setCursor(10, 40);
