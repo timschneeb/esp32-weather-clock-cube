@@ -11,6 +11,7 @@
 #include <FS.h>
 #include <SPIFFS.h>
 #include <time.h>
+#include <esp_sntp.h>
 #include <ArduinoJson.h>
 #include <Update.h>
 #include <vector>
@@ -58,6 +59,7 @@ unsigned long lastClockUpdate = 0;
 unsigned long lastKeyTime = 0;
 unsigned long screenTimeout = 0;
 unsigned long screenSince = 0;
+boolean sntp_time_was_setup = false;
 // --- WEATHER ---
 String weatherTempDay = "";
 float weatherHumidity = 0.0;
@@ -528,8 +530,8 @@ void fetchWeather() {
   }
   http.end();
 
-  // Only update min/max on a new day
-  if (todayStr == weatherTempDay) {
+  // Only update min/max on a new day, or when not yet set
+  if (todayStr == weatherTempDay && !(weatherTempMin == 0.0 && weatherTempMax == 0.0)) {
     Serial.println("[WEATHER] Min/max already fetched for this day, no update needed.");
     return;
   }
@@ -1245,6 +1247,10 @@ void setup() {
   long gmtOffset_sec = timezoneVal * 3600L;
   Serial.printf("configTime: gmtOffset_sec = %ld\n", gmtOffset_sec);
   configTime(gmtOffset_sec, 0, "pool.ntp.org");
+  // Setup callback for time synchronization
+  esp_sntp_set_time_sync_notification_cb([](timeval*) {
+    sntp_time_was_setup = true;
+  });
 
   setupWiFi();
 
@@ -1289,7 +1295,9 @@ void loop() {
     setScreen("clock", 0, "timeout");
   }
 
-  if (millis() - lastWeatherFetch > WEATHER_REFRESH_INTERVAL) {
+  if (millis() - lastWeatherFetch > WEATHER_REFRESH_INTERVAL || sntp_time_was_setup) {
+    sntp_time_was_setup = false;
+
     lastWeatherFetch = millis();
     fetchWeather();
     if (currentScreen == "clock") showClock();
