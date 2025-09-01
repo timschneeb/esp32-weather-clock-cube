@@ -17,6 +17,8 @@
 #include <vector>
 #include <algorithm>
 
+#include "Button.h"
+
 // ------------------------
 //  Globals & Config
 // ------------------------
@@ -32,6 +34,7 @@ const char* CLIENT_ID = "ESP32Client";
 const char* DEFAULT_SSID = "ESP32_AP";
 const char* DEFAULT_PASSWORD = "admin1234";
 const unsigned long WIFI_TIMEOUT = 10000;
+const unsigned long KEEPALIVE_TIMEOUT = 5 * 60 * 1000;
 const int DEBOUNCE_MS = 250;
 const unsigned long CLOCK_REFRESH_INTERVAL = 1000UL; // 1 second
 const char* daysShort[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
@@ -48,6 +51,7 @@ String weatherApiKey = "";
 String mode = "alert"; // Default to "alert"
 String currentScreen = "clock"; // ["clock", "event", "status", "error"]
 TFT_eSPI tft = TFT_eSPI();
+Button button = Button();
 AsyncWebServer server(80);
 AsyncMqttClient mqttClient;
 String mqttServer = "";
@@ -60,6 +64,9 @@ unsigned long lastKeyTime = 0;
 unsigned long screenTimeout = 0;
 unsigned long screenSince = 0;
 boolean sntp_time_was_setup = false;
+unsigned long last_keepalive_time = 0;
+boolean is_manually_sleeping = false;
+boolean is_automatically_sleeping = false;
 // --- WEATHER ---
 String weatherTempDay = "";
 float weatherHumidity = 0.0;
@@ -89,11 +96,14 @@ void setScreen(const String& newScreen, unsigned long timeoutSec = 0, const char
 //  Backlight
 // ------------------------
 void set_tft_brt(int brt) {
+  // prevent setting brightness when sleeping
+  if (is_manually_sleeping || is_automatically_sleeping)
+    brt = 0;
+
   brt = constrain(brt, 0, 255);
-  ledcSetup(LCD_BL_PWM_CHANNEL, 5000, 8);
-  ledcAttachPin(TFT_BL, LCD_BL_PWM_CHANNEL);
+
   ledcWrite(LCD_BL_PWM_CHANNEL, 255 - brt);
-  Serial.printf("[BACKLIGHT] Brightness set to: %d (inverted: %d)\n", brt, 255 - brt);
+  // Serial.printf("[BACKLIGHT] Brightness set to: %d (inverted: %d)\n", brt, 255 - brt);
 }
 
 // ------------------------
@@ -1131,6 +1141,15 @@ void setupWebInterface() {
       ESP.restart();
   });
 
+  server.on("/keepalive", HTTP_GET, [](AsyncWebServerRequest *request) {
+      Serial.println("[WEB] Keep-alive signal received");
+      last_keepalive_time = millis();
+      is_automatically_sleeping = false;
+      request->send(200, "application/json",
+        "{\"now\": " + String(last_keepalive_time) + ", \"alive_until\": " + String(last_keepalive_time+KEEPALIVE_TIMEOUT) + "}");
+      set_tft_brt(getConfig().brightness);
+  });
+
   server.begin();
 }
 
@@ -1212,6 +1231,18 @@ void setup() {
     tft.println("SPIFFS failed");
     while (true) delay(1000);
   }
+
+  ledcSetup(LCD_BL_PWM_CHANNEL, 5000, 8);
+  ledcAttachPin(TFT_BL, LCD_BL_PWM_CHANNEL);
+
+  button.begin();
+  button.attachClick([] {
+    is_manually_sleeping = !is_manually_sleeping;
+    is_automatically_sleeping = false;
+    set_tft_brt(getConfig().brightness);
+    last_keepalive_time = 0;
+  });
+
   tft.begin();
   tft.setRotation(0);
 
@@ -1311,4 +1342,13 @@ void loop() {
   if (currentScreen == "clock" && millis() - lastClockUpdate > CLOCK_REFRESH_INTERVAL) {
     showClock();
   }
+
+  if (last_keepalive_time > 0 && millis() - last_keepalive_time > KEEPALIVE_TIMEOUT) {
+    Serial.println("[AutoSleep] Entering automatic sleep mode due to inactivity.");
+    is_automatically_sleeping = true;
+    last_keepalive_time = 0;
+    set_tft_brt(0);
+  }
+
+  button.tick();
 }
