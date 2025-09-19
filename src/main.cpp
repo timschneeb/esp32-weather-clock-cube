@@ -210,7 +210,7 @@ void setScreen(const String& newScreen, unsigned long timeoutSec, const char* by
             size_t bytesRead = file.readBytes((char*)jpgData, fileSize);
             file.close();
             if (bytesRead == fileSize) {
-              tft.fillScreen(TFT_BLACK);
+              //tft.fillScreen(TFT_BLACK);
               TJpgDec.drawJpg(0, 0, jpgData, fileSize);
               Serial.println("[DEBUG] Displayed single image: " + filename);
             }
@@ -382,7 +382,7 @@ void displayImageFromAPI(String url, String zone) {
   int tries = 0;
   bool success = false;
   String lastErrorReason = "";
-  const size_t MAX_FILE_SIZE = 40 * 1024;
+  const size_t MAX_FILE_SIZE = 70 * 1024;
 
   // Construct detectionId from URL
   String detectionId = url.substring(url.lastIndexOf("/events/") + 8, url.indexOf("/snapshot.jpg"));
