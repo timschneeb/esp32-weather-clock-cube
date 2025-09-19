@@ -378,9 +378,10 @@ void showClock() {
 //  Display image from API
 // ------------------------
 void displayImageFromAPI(String url, String zone) {
-  const int maxTries = 5;
+  const int maxTries = 3;
   int tries = 0;
   bool success = false;
+  String lastErrorReason = "";
   const size_t MAX_FILE_SIZE = 40 * 1024;
 
   // Construct detectionId from URL
@@ -394,14 +395,8 @@ void displayImageFromAPI(String url, String zone) {
     filename = "/events/default.jpg";
   }
 
-  // Skip if image already exists
   if (SPIFFS.exists(filename)) {
-    Serial.print("[DEBUG] Image already exists: "); Serial.println(filename);
-    if (std::find(jpgQueue.begin(), jpgQueue.end(), filename) == jpgQueue.end()) {
-      jpgQueue.push_back(filename);
-    }
-    setScreen("event", displayDuration, "displayImageFromAPI");
-    return;
+    SPIFFS.remove(filename);
   }
 
   while (tries < maxTries && !success) {
@@ -413,9 +408,10 @@ void displayImageFromAPI(String url, String zone) {
       uint32_t len = http.getSize();
       if (len > MAX_FILE_SIZE) {
         Serial.println("[ERROR] Image too large: " + String(len) + " bytes");
-        setScreen("error", 10, "displayImageFromAPI");
+        setScreen("error", 5, "displayImageFromAPI");
         tft.setTextColor(TFT_RED);
         tft.setTextSize(2);
+        tft.setCursor(0, 0);
         tft.println("Image too large");
         http.end();
         return;
@@ -478,18 +474,21 @@ void displayImageFromAPI(String url, String zone) {
       http.end();
     } else {
       Serial.println("[WARNING] HTTP GET failed: " + String(httpCode));
+      lastErrorReason = HTTPClient::errorToString(httpCode) + ": " + http.getString();
       http.end();
       tries++;
-      delay(2000);
+      delay(500);
     }
   }
 
   if (!success) {
     Serial.println("[ERROR] Failed to load image after " + String(maxTries) + " attempts");
-    setScreen("error", 10, "displayImageFromAPI");
+    setScreen("error", 5, "displayImageFromAPI");
     tft.setTextColor(TFT_RED);
     tft.setTextSize(2);
+    tft.setCursor(0, 0);
     tft.println("Loading failed");
+    tft.println(lastErrorReason);
   }
 }
 
@@ -1223,6 +1222,15 @@ void setupWiFi() {
 // ------------------------
 void setup() {
   Serial.begin(115200);
+
+  tft.begin();
+  tft.setRotation(0);
+  tft.fillScreen(TFT_BLACK);
+
+  ledcSetup(LCD_BL_PWM_CHANNEL, 5000, 8);
+  ledcAttachPin(TFT_BL, LCD_BL_PWM_CHANNEL);
+  set_tft_brt(0);
+
   if (!SPIFFS.begin(true)) {
     Serial.println("SPIFFS Mount Failed");
     setScreen("error", 30, "setup_error");
@@ -1232,9 +1240,6 @@ void setup() {
     while (true) delay(1000);
   }
 
-  ledcSetup(LCD_BL_PWM_CHANNEL, 5000, 8);
-  ledcAttachPin(TFT_BL, LCD_BL_PWM_CHANNEL);
-
   button.begin();
   button.attachClick([] {
     is_manually_sleeping = !is_manually_sleeping;
@@ -1243,14 +1248,12 @@ void setup() {
     last_keepalive_time = 0;
   });
 
-  tft.begin();
-  tft.setRotation(0);
 
   preferences.begin("config", false);
   int brightness = getConfig().brightness;
+  set_tft_brt(brightness);
   preferences.end();
 
-  tft.fillScreen(TFT_BLACK);
 
   TJpgDec.setCallback(jpgRenderCallback);
   TJpgDec.setSwapBytes(true);
