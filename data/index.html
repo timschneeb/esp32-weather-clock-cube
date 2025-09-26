@@ -70,32 +70,6 @@
                         <input type="range" id="brightness" name="brightness" min="0" max="255" value="{{brightness}}" oninput="updateBrightnessOutput(this.value)">
                         <output id="brightnessValue">{{brightness}}</output>
                     </div>
-                    
-                    <div class="form-section">
-                      <label style="margin-bottom:8px;">
-                        <input type="checkbox" id="autoBrtEnabled" name="autoBrtEnabled" {{autoBrtEnabled}} onchange="toggleAutoBrtFields()">
-                        Automatically adjust brightness by time
-                      </label>
-                      <div class="auto-brt-fields">
-                        <label for="autoBrtRange">Time (from/to):</label>
-                        <div class="double-slider-box">
-                          <div class="range-slider" id="hour-range-slider">
-                            <input type="range" id="autoBrtStartHr" name="autoBrtStartHr" min="0" max="23" value="{{autoBrtStartHr}}" class="min-val" oninput="updateHourSlider()">
-                            <input type="range" id="autoBrtEndHr" name="autoBrtEndHr" min="0" max="23" value="{{autoBrtEndHr}}" class="max-val" oninput="updateHourSlider()">
-                            <div class="slider-track" id="slider-track"></div>
-                          </div>
-                          <div class="slider-values" id="slider-values">
-                            <span id="rangeStartLabel">{{autoBrtStartHr}}</span> -
-                            <span id="rangeEndLabel">{{autoBrtEndHr}}</span> hours
-                          </div>
-                        </div>
-                      </div>
-                      <label for="autoBrtLvl" style="margin-top:10px;">Brightness during this period (0-255)</label>
-                      <div class="slider-container">
-                        <input type="range" min="0" max="255" name="autoBrtLvl" id="autoBrtLvl" value="{{autoBrtLvl}}" oninput="autoBrtLvlOutput.textContent = this.value">
-                        <output id="autoBrtLvlOutput">{{autoBrtLvl}}</output>
-                      </div>
-                    </div>
 
                     <button type="submit">Save</button>
                 </form>

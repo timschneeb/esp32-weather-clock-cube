@@ -5,22 +5,13 @@
 
 #include <Button2.h>
 
-#ifndef TOUCH_PIN
-#define TOUCH_PIN 9
-#endif
+#include "Config.h"
 
 extern "C" {
     typedef void (*OnClickEventHandler)();
 }
 
-
 class Button {
-    Button2 button2;
-    int threshold = 1500; // ESP32S3
-    byte buttonState = HIGH;
-    OnClickEventHandler onClick = nullptr;
-    OnClickEventHandler onLongPress = nullptr;
-
 public:
     Button();
     void begin();
@@ -28,10 +19,16 @@ public:
 
     // save function for click event
     void attachClick(OnClickEventHandler newFunction);
-
     void attachLongPressStart(OnClickEventHandler newFunction);
 
-    bool touchdetected = false;
+    bool touchDetected = false;
+
+private:
+    Button2 button2;
+    int threshold = TOUCH_THRESHOLD; // ESP32S3
+    byte buttonState = HIGH;
+    OnClickEventHandler onClick = nullptr;
+    OnClickEventHandler onLongPress = nullptr;
 };
 
 
