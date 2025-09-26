@@ -13,7 +13,6 @@
 #include <ArduinoJson.h>
 #include <vector>
 #include <algorithm>
-#include <QuarkTS.h>
 // ReSharper disable once CppUnusedIncludeDirective
 #include <AsyncHTTPRequest_Generic.h> // Library doesn't handle multiple includes well, needs to be included here
 
@@ -26,19 +25,16 @@
 #include "WebServer.h"
 
 // Constants
-
-#undef delay // avoid conflict with co::delay
-
 constexpr int DEBOUNCE_MS = 250;
 constexpr unsigned long CLOCK_REFRESH_INTERVAL = 1000UL; // 1 second
 const char *daysShort[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char *months[] = {
     "Jan.", "Feb.", "March", "April", "May", "June", "July", "August", "Sept.", "Oct.", "Nov.", "Dec."
 };
-// Variables
-WebServer* webServer = nullptr;
 
-String weatherIcon = "";
+// Variables
+QueueHandle_t eventQueue;
+
 String lastDrawnWeatherIcon = "";
 String lastDate = "";
 String currentScreen = "clock"; // ["clock", "event", "status", "error"]
@@ -53,9 +49,6 @@ boolean sntp_time_was_setup = false;
 unsigned long last_keepalive_time = 0;
 boolean is_manually_sleeping = false;
 boolean is_automatically_sleeping = false;
-// --- WEATHER ---
-unsigned long lastWeatherFetch = 0;
-constexpr unsigned long WEATHER_REFRESH_INTERVAL = 15UL * 60UL * 1000UL; // 10 minutes
 // --- Slideshow ---
 String pendingImageUrl = "";
 bool imagePending = false;
@@ -83,7 +76,6 @@ void set_tft_brt(int brt) {
     brt = constrain(brt, 0, 255);
 
     ledcWrite(TFT_BL_PWM_CHANNEL, 255 - brt);
-    // Serial.printf("[BACKLIGHT] Brightness set to: %d (inverted: %d)\n", brt, 255 - brt);
 }
 
 // ------------------------
@@ -298,8 +290,6 @@ void showClock() {
         tft.println(timeBuffer);
     }
 
-    ;
-
     // Temperature
     String tempValue = String(Settings::instance().weatherTempDay.load(), 1);
     String tempUnit = "÷c";
@@ -355,6 +345,9 @@ void showClock() {
     tft.setTextSize(2);
     tft.setCursor(2 + maxLabelWidth + tempMaxValueWidth, 200);
     tft.print(tempMaxUnit);
+
+
+    String weatherIcon = Settings::instance().weatherIcon.load();
 
     // Weather icon
     if (isScreenTransition || weatherIcon != lastDrawnWeatherIcon) {
@@ -486,331 +479,123 @@ void displayImageFromAPI(const String& url, const String& zone) {
     }
 }
 
-// ------------------------
-//  Weather fetcher
-// ------------------------
-void fetchWeather() {
-    Serial.println("[WEATHER] fetchWeather() started");
+void eventHandlerTask(void *pvParameters) {
+    IEvent* event;
+    for (;;) {
 
-    String weatherApiKey = Settings::instance().weatherApiKey;
-    String weatherCity = Settings::instance().weatherCity;
-
-    if (weatherApiKey == "" || weatherCity == "") {
-        Serial.println("[WEATHER] No weatherApiKey or city set!");
-        return;
-    }
-
-    // Determine current day as string
-    time_t now = time(nullptr);
-    struct tm *tm_now = localtime(&now);
-    char dateStr[11];
-    strftime(dateStr, sizeof(dateStr), "%Y-%m-%d", tm_now);
-    String todayStr(dateStr);
-    Serial.print("[WEATHER] Current date (todayStr): ");
-    Serial.println(todayStr);
-
-    // Fetch current weather data
-    HTTPClient http;
-    String urlNow = "http://api.openweathermap.org/data/2.5/weather?q=" + weatherCity + "&appid=" + weatherApiKey +
-                    "&units=metric";
-    Serial.print("[WEATHER] Fetching current weather from: ");
-    Serial.println(urlNow);
-    http.begin(urlNow);
-    int httpCodeNow = http.GET();
-
-    float weatherTempDay = Settings::instance().weatherTempDay;
-    float weatherTempMin = Settings::instance().weatherTempMin;
-    float weatherTempMax = Settings::instance().weatherTempMax;
-    float weatherHumidity = Settings::instance().weatherHumidity;
-
-    if (httpCodeNow == 200) {
-        String payload = http.getString();
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, payload);
-
-        if (!error) {
-            weatherTempDay = doc["main"]["temp"] | 0.0f;
-            weatherHumidity = doc["main"]["humidity"] | 0.0f; // Huidige luchtvochtigheid
-            weatherIcon = doc["weather"][0]["icon"].as<String>();
-
-            Serial.print("[WEATHER] Current temperature: ");
-            Serial.println(weatherTempDay);
-            Serial.print("[WEATHER] Current humidity: ");
-            Serial.println(weatherHumidity);
-            Serial.print("[WEATHER] Icon: ");
-            Serial.println(weatherIcon);
-        } else {
-            Serial.print("[WEATHER] JSON parse error (current): ");
-            Serial.println(error.c_str());
-        }
-    } else {
-        Serial.print("[WEATHER] Error fetching current weather, code: ");
-        Serial.println(httpCodeNow);
-    }
-    http.end();
-
-
-
-    // Only update min/max on a new day, or when not yet set
-    if (!(weatherTempMin == 0.0 && weatherTempMax == 0.0)) {
-        Serial.println("[WEATHER] Min/max already fetched for this day, no update needed.");
-        return;
-    }
-
-    // Fetch min/max for today from forecast
-    String urlForecast = "http://api.openweathermap.org/data/2.5/forecast?q=" + weatherCity + "&appid=" + weatherApiKey
-                         + "&units=metric&lang=en";
-    Serial.print("[WEATHER] Fetching forecast from: ");
-    Serial.println(urlForecast);
-    http.begin(urlForecast);
-    int httpCodeForecast = http.GET();
-
-    if (httpCodeForecast == 200) {
-        String forecastPayload = http.getString();
-        JsonDocument doc;
-        DeserializationError error = deserializeJson(doc, forecastPayload);
-
-        if (!error) {
-            float minTemp = 99.0;
-            float maxTemp = -99.0;
-            int matched = 0;
-
-            JsonArray list = doc["list"];
-            for (JsonObject entry: list) {
-                String dt_txt = entry["dt_txt"].as<String>();
-                float tempMin = entry["main"]["temp_min"] | 0.0f;
-                float tempMax = entry["main"]["temp_max"] | 0.0f;
-
-                if (dt_txt.startsWith(todayStr)) {
-                    matched++;
-                    Serial.print("[WEATHER] Match found for timestamp: ");
-                    Serial.print(dt_txt);
-                    Serial.print(", temp_min: ");
-                    Serial.print(tempMin);
-                    Serial.print(", temp_max: ");
-                    Serial.println(tempMax);
-                    if (tempMin < minTemp) minTemp = tempMin;
-                    if (tempMax > maxTemp) maxTemp = tempMax;
-                }
+        if (imagePending) {
+                imagePending = false;
+                displayImageFromAPI(pendingImageUrl, pendingZone);
             }
 
-            if (matched > 0) {
-                weatherTempMin = minTemp;
-                weatherTempMax = maxTemp;
-                Serial.print("[WEATHER] Minimum temperature today: ");
-                Serial.println(weatherTempMin);
-                Serial.print("[WEATHER] Maximum temperature today: ");
-                Serial.println(weatherTempMax);
-                if (matched == 1) {
-                    Serial.println(
-                        "[WEATHER] Warning: Only one timestamp found for today, min/max based on single data point.");
-                }
-            } else {
-                Serial.println("[WEATHER] No forecasts found for today (no date match).");
-                weatherTempMin = 0;
-                weatherTempMax = 0;
-                Serial.print("[WEATHER] Minimum temperature today: ");
-                Serial.println(weatherTempMin);
-                Serial.print("[WEATHER] Maximum temperature today: ");
-                Serial.println(weatherTempMax);
+            if (slideshowActive) {
+                handleSlideshow();
             }
-        } else {
-            Serial.print("[WEATHER] JSON parse error (forecast): ");
-            Serial.println(error.c_str());
-            weatherTempMin = 0;
-            weatherTempMax = 0;
-            Serial.print("[WEATHER] Minimum temperature today: ");
-            Serial.println(weatherTempMin);
-            Serial.print("[WEATHER] Maximum temperature today: ");
-            Serial.println(weatherTempMax);
-        }
-    } else {
-        Serial.print("[WEATHER] Error fetching forecast, code: ");
-        Serial.println(httpCodeForecast);
-        weatherTempMin = 0;
-        weatherTempMax = 0;
-        Serial.print("[WEATHER] Minimum temperature today: ");
-        Serial.println(weatherTempMin);
-        Serial.print("[WEATHER] Maximum temperature today: ");
-        Serial.println(weatherTempMax);
-    }
 
-    // Set the day and save all values
-    Settings::instance().weatherTempDay = weatherTempDay;
-    Settings::instance().weatherTempMin = weatherTempMin;
-    Settings::instance().weatherTempMax = weatherTempMax;
-    Settings::instance().weatherHumidity = weatherHumidity;
-    Settings::instance().save();
-
-    http.end();
-}
-
-using namespace qOS;
-
-hw_timer_t *Timer0_Cfg = nullptr;
-
-void IRAM_ATTR Timer0_ISR() {
-    clock::sysTick();
-}
-
-void IdleTask_Callback(const event_t &e) {
-    if (imagePending) {
-        imagePending = false;
-        displayImageFromAPI(pendingImageUrl, pendingZone);
-    }
-
-    if (slideshowActive) {
-        handleSlideshow();
-    }
-
-    if (e.getTrigger() == trigger::byNotificationQueued) {
-        const auto event = static_cast<IEvent *>(e.EventData);
-        Serial.println(">>>>> [IdleTask] Event received: " + String(static_cast<int>(event->id())));
-
-        if (event != nullptr) {
-            switch (event->id()) {
-                case EventId::NET_StaConnected:
-                    setScreen("statusWiFi", 5, "show_wifi_status");
-                    tft.setTextColor(TFT_GREEN, TFT_BLACK);
-                    tft.setTextSize(2);
-                    tft.setCursor(10, 40);
-                    tft.println("Connected to:");
-                    tft.setCursor(10, 70);
-                    tft.println(NetworkService::getSavedSSID());
-                    tft.setCursor(10, 110);
-                    tft.println("IP:");
-                    tft.setCursor(10, 140);
-                    tft.println(WiFi.localIP());
-                    break;
-                case EventId::NET_ApCreated:
-                    setScreen("apmode", 86400, "fallbackAP");
-                    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-                    tft.setTextSize(2);
-                    tft.setCursor(10, 30);
-                    tft.println("WiFi not connected");
-                    tft.setTextSize(3);
-                    tft.setCursor(20, 60);
-                    tft.println("**AP MODE**");
-                    tft.setTextSize(2);
-                    tft.setCursor(10, 110);
-                    tft.println("SSID: " + String(DEFAULT_SSID));
-                    tft.setCursor(10, 140);
-                    tft.println("PWD: " + String(DEFAULT_PASSWORD));
-                    tft.setCursor(10, 170);
-                    tft.println("IP: " + WiFi.softAPIP().toString());
-                    break;
-                case EventId::API_KeepAlive:
-                    last_keepalive_time = event->to<API_KeepAliveEvent>()->now();
-                    if (is_manually_sleeping || is_automatically_sleeping) {
-                        is_automatically_sleeping = false;
-                        is_manually_sleeping = false;
-                        set_tft_brt(Settings::instance().brightness);
+        if (xQueueReceive(eventQueue, &event, 1) == pdPASS) {
+            if (event != nullptr) {
+                switch (event->id()) {
+                    case EventId::NET_StaConnected:
+                        setScreen("statusWiFi", 5, "show_wifi_status");
+                        tft.setTextColor(TFT_GREEN, TFT_BLACK);
+                        tft.setTextSize(2);
+                        tft.setCursor(10, 40);
+                        tft.println("Connected to:");
+                        tft.setCursor(10, 70);
+                        tft.println(NetworkService::getSavedSSID());
+                        tft.setCursor(10, 110);
+                        tft.println("IP:");
+                        tft.setCursor(10, 140);
+                        tft.println(WiFi.localIP());
+                        break;
+                    case EventId::NET_ApCreated:
+                        setScreen("apmode", 86400, "fallbackAP");
+                        tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+                        tft.setTextSize(2);
+                        tft.setCursor(10, 30);
+                        tft.println("WiFi not connected");
+                        tft.setTextSize(3);
+                        tft.setCursor(20, 60);
+                        tft.println("**AP MODE**");
+                        tft.setTextSize(2);
+                        tft.setCursor(10, 110);
+                        tft.println("SSID: " + String(DEFAULT_SSID));
+                        tft.setCursor(10, 140);
+                        tft.println("PWD: " + String(DEFAULT_PASSWORD));
+                        tft.setCursor(10, 170);
+                        tft.println("IP: " + WiFi.softAPIP().toString());
+                        break;
+                    case EventId::API_KeepAlive:
+                        last_keepalive_time = event->to<API_KeepAliveEvent>()->now();
+                        if (is_manually_sleeping || is_automatically_sleeping) {
+                            is_automatically_sleeping = false;
+                            is_manually_sleeping = false;
+                            set_tft_brt(Settings::instance().brightness);
+                        }
+                        break;
+                    case EventId::API_ShowImageFromUrl:
+                        pendingImageUrl = event->to<API_ShowImageFromUrlEvent>()->url();
+                        imagePending = true;
+                        break;
+                    case EventId::WEB_MqttDisconnected:
+                        setScreen("error", 50, "onMqttDisconnect");
+                        tft.setTextColor(TFT_RED, TFT_BLACK);
+                        tft.setTextSize(2);
+                        tft.setCursor(0, 0);
+                        tft.println("MQTT ERROR!");
+                        Serial.println("[MQTT] Attempting to reconnect...");
+                        break;
+                    case EventId::WEB_MqttError:
+                        setScreen("error", 30, "onMqttMessage");
+                        tft.setTextColor(TFT_RED);
+                        tft.setTextSize(2);
+                        tft.println(event->to<WEB_MqttErrorEvent>()->message());
+                        break;
+                    case EventId::WEB_ShowImageFromUrlWithZone:
+                        pendingImageUrl = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url();
+                        pendingZone = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone();
+                        imagePending = true;
+                        break;
+                    case EventId::WEB_ShowLocalImage: {
+                        const auto file = event->to<WEB_ShowLocalImageEvent>()->filename();
+                        if (std::find(jpgQueue.begin(), jpgQueue.end(), file) == jpgQueue.end()) {
+                            jpgQueue.push_back(file);
+                        }
+                        break;
                     }
-                    break;
-                case EventId::API_ShowImageFromUrl:
-                    pendingImageUrl = event->to<API_ShowImageFromUrlEvent>()->url();
-                    imagePending = true;
-                    break;
-                case EventId::WEB_MqttDisconnected:
-                    setScreen("error", 50, "onMqttDisconnect");
-                    tft.setTextColor(TFT_RED, TFT_BLACK);
-                    tft.setTextSize(2);
-                    tft.setCursor(0, 0);
-                    tft.println("MQTT ERROR!");
-                    Serial.println("[MQTT] Attempting to reconnect...");
-                    break;
-                case EventId::WEB_MqttError:
-                    setScreen("error", 30, "onMqttMessage");
-                    tft.setTextColor(TFT_RED);
-                    tft.setTextSize(2);
-                    tft.println(event->to<WEB_MqttErrorEvent>()->message());
-                    break;
-                case EventId::WEB_ShowImageFromUrlWithZone:
-                    pendingImageUrl = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url();
-                    pendingZone = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone();
-                    imagePending = true;
-                    break;
-                case EventId::WEB_ShowLocalImage:
-                    const auto file = event->to<WEB_ShowLocalImageEvent>()->filename();
-                    if (std::find(jpgQueue.begin(), jpgQueue.end(), file) == jpgQueue.end()) {
-                        jpgQueue.push_back(file);
-                    }
-                    break;
-                case EventId::CFG_Updated:
-                    break;
-                case EventId::CFG_WeatherUpdated:
-                    //fetchWeather();
-                    break;
-                default: ;
+                    case EventId::CFG_Updated:
+                        break;
+                    case EventId::CFG_WeatherUpdated:
+                        break;
+                    default: ;
+                }
+                delete event;
             }
-            delete event;
         }
-    }
 
+        if (currentScreen != "clock" && screenTimeout > 0 && millis() - screenSince > screenTimeout) {
+            setScreen("clock", 0, "timeout");
+        }
 
-    if (currentScreen != "clock" && screenTimeout > 0 && millis() - screenSince > screenTimeout) {
-        setScreen("clock", 0, "timeout");
-    }
+        if (sntp_time_was_setup) {
+            sntp_time_was_setup = false;
+            if (currentScreen == "clock") showClock();
+        }
 
-    if (millis() - lastWeatherFetch > WEATHER_REFRESH_INTERVAL || sntp_time_was_setup) {
-        sntp_time_was_setup = false;
+        if (currentScreen == "clock" && millis() - lastClockUpdate > CLOCK_REFRESH_INTERVAL) {
+            showClock();
+        }
 
-        lastWeatherFetch = millis();
-        //fetchWeather();
-        if (currentScreen == "clock") showClock();
-    }
+        if (last_keepalive_time > 0 && millis() - last_keepalive_time > KEEPALIVE_TIMEOUT) {
+            Serial.println(
+                "[AutoSleep] Entering automatic sleep mode due to inactivity. Now: " + String(millis()) +
+                ", last keepalive: " + String(last_keepalive_time));
+            is_automatically_sleeping = true;
+            last_keepalive_time = 0;
+            set_tft_brt(0);
+        }
 
-    if (currentScreen == "clock" && millis() - lastClockUpdate > CLOCK_REFRESH_INTERVAL) {
-        showClock();
-    }
-
-    if (last_keepalive_time > 0 && millis() - last_keepalive_time > KEEPALIVE_TIMEOUT) {
-        Serial.println(
-            "[AutoSleep] Entering automatic sleep mode due to inactivity. Now: " + String(millis()) +
-            ", last keepalive: " + String(last_keepalive_time));
-        is_automatically_sleeping = true;
-        last_keepalive_time = 0;
-        set_tft_brt(0);
-    }
-
-    button.tick();
-}
-
-void HAL_PutChar(void *sp, const char c) {
-    (void) sp;
-    Serial.write(c);
-}
-
-void print_state(task* task) {
-    if (task == nullptr) {
-        Serial.println("Task not found");
-        return;
-    }
-
-
-
-    Serial.println(String(task->getName()) + " id: " + String(task->getID()));
-    Serial.println("\ttask->getState(): " + String(static_cast<int>(task->getState())));
-    Serial.println("\tcycles: "+String(task->getCycles()));
-
-    Serial.print('\n');
-    switch (os.getGlobalState(*task)) {
-        case globalState::UNDEFINED:
-            Serial.println(String(task->getName()) + " UNDEFINED");
-            break;
-        case globalState::READY:
-            Serial.println(String(task->getName()) + " READY");
-            break;
-        case globalState::WAITING:
-            Serial.println(String(task->getName()) + " WAITING");
-            break;
-        case globalState::SUSPENDED:
-            Serial.println(String(task->getName()) + " SUSPENDED");
-            break;
-        case globalState::RUNNING:
-            Serial.println(String(task->getName()) + " RUNNING");
-            break;
-        default: ;
+        button.tick();
     }
 }
 
@@ -818,15 +603,6 @@ void print_state(task* task) {
 // Arduino setup()
 // ------------------------
 void setup() {
-    // Setup 1ms timer interrupt for qOS
-    /*Timer0_Cfg = timerBegin(0, 80, true);
-    timerAttachInterrupt(Timer0_Cfg, &Timer0_ISR, true);
-    timerAlarmWrite(Timer0_Cfg, 1000, true);
-    timerAlarmEnable(Timer0_Cfg);*/
-
-    logger::setOutputFcn(HAL_PutChar);
-    os.init(millis, IdleTask_Callback);
-
     Serial.begin(115200);
 
     tft.begin();
@@ -844,25 +620,16 @@ void setup() {
         tft.setTextSize(2);
         tft.println("SPIFFS failed");
         while (true) {
-#undef delay
             delay(1000);
         }
     }
 
     button.begin();
     button.attachClick([] {
-        /* TODO is_manually_sleeping = !is_manually_sleeping;
+        is_manually_sleeping = !is_manually_sleeping;
         is_automatically_sleeping = false;
         set_tft_brt(Settings::instance().brightness);
-        last_keepalive_time = 0;*/
-        os.getTaskByName("Network")->resume();
-        qOS::os.notify(qOS::notifyMode::SIMPLE,  *os.getTaskByName("Network"), nullptr);
-
-            print_state(os.getTaskByName("Network"));
-        print_state(os.getTaskByName("Weather"));
-        print_state(os.getTaskByName("Web"));
-        print_state(os.getTaskByName("idle"));
-
+        last_keepalive_time = 0;
     });
 
     set_tft_brt(Settings::instance().brightness);
@@ -880,18 +647,17 @@ void setup() {
         tzset();
     });
 
-    NetworkService::registerTask();
-    webServer = new WebServer();
-    // Network::instance().connectToSavedWiFi();
+    eventQueue = xQueueCreate(20, sizeof(IEvent*));
 
-    WeatherService::registerTask();
-    //fetchWeather();
-    lastWeatherFetch = millis();
+    xTaskCreate(eventHandlerTask, "EventHandlerTask", 4096, NULL, 1, NULL);
+    xTaskCreate([](void* o){ auto s = static_cast<NetworkService*>(o); s->run(nullptr); }, "NetworkService", 4096, &NetworkService::instance(), 1, NULL);
+    xTaskCreate([](void* o){ auto s = static_cast<WeatherService*>(o); s->run(nullptr); }, "WeatherService", 4096, &WeatherService::instance(), 1, NULL);
+    xTaskCreate([](void* o){ auto s = static_cast<WebServer*>(o); s->run(nullptr); }, "WebServer", 4096, &WebServer::instance(), 1, NULL);
 }
 
 // ------------------------
 // Arduino loop()
 // ------------------------
 void loop() {
-    os.run();
+    vTaskDelay(portMAX_DELAY);
 }

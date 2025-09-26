@@ -5,22 +5,20 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include <QuarkTS.h>
 
+
+#include <Arduino.h>
 #include "utils/Macros.h"
 
-class NetworkService final : public qOS::task {
+class NetworkService final {
     SINGLETON(NetworkService)
 public:
-    static void registerTask();
-
     void connectToSavedWiFi();
 
     static String getSavedSSID();
     static bool isConnected();
 
-protected:
-    void activities(qOS::event_t e) override;
+    void run(void *pvParameters);
 
 private:
     static void enterAPMode();

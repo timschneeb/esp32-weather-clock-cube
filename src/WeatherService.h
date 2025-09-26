@@ -5,18 +5,16 @@
 #ifndef WEATHERSERVICE_H
 #define WEATHERSERVICE_H
 
-#include <QuarkTS.h>
 
+
+#include <Arduino.h>
 #include "HTTPRequest.h"
 #include "utils/Macros.h"
 
-class WeatherService final : public qOS::task {
+class WeatherService final {
     SINGLETON(WeatherService)
 public:
-    static void registerTask();
-
-protected:
-    void activities(qOS::event_t e) override;
+    void run(void *pvParameters);
 
 private:
     HTTPRequest httpNowTask;

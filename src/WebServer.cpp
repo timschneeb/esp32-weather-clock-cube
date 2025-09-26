@@ -13,19 +13,12 @@
 #include "NetworkService.h"
 #include "Settings.h"
 
-
-// Undefine QuarkTS macro due to conflict with ESP.restart()
-#undef restart
-#undef delay
-
 using namespace ArduinoJson;
 
 auto MQTT_TOPIC = "frigate/reviews";
 auto CLIENT_ID = "ESP32Client";
 
 WebServer::WebServer() : server(80) {
-    setName("Web");
-
     preferences.begin("config", false);
     mqttServer = preferences.getString("mqtt", "");
     mqttPort = preferences.getInt("mqttport", 1883);
@@ -38,7 +31,9 @@ WebServer::WebServer() : server(80) {
     mqttClient.onMessage(&WebServer::onMqttMessage);
     mqttClient.setServer(mqttServer.c_str(), mqttPort);
     mqttClient.setCredentials(mqttUser.c_str(), mqttPass.c_str());
-    if (NetworkService::isConnected()) mqttClient.connect();
+    if (NetworkService::isConnected()) {
+        mqttClient.connect();
+    }
 
     server.serveStatic("/styles.css", SPIFFS, "/styles.css");
     server.serveStatic("/scripts.js", SPIFFS, "/scripts.js");
@@ -179,7 +174,8 @@ WebServer::WebServer() : server(80) {
         bool apiKeyExists = request->getParam("weatherApiKey_exists", true)->value() == "1";
         if (!apiKeyExists || newApiKey != "******") {
             preferences.putString("weatherApiKey", newApiKey);
-            qOS::os.notify(qOS::notifyMode::QUEUED, new CFG_WeatherUpdatedEvent());
+            auto* event = new CFG_WeatherUpdatedEvent();
+            xQueueSend(eventQueue, &event, portMAX_DELAY);
         }
         String newCity = request->getParam("weatherCity", true)->value();
         preferences.putString("weatherCity", newCity);
@@ -226,7 +222,7 @@ WebServer::WebServer() : server(80) {
                   const bool ok = !Update.hasError();
                   request->send(200, "text/plain", ok ? "Update completed. Restarting..." : "Update failed!");
                   if (ok) {
-                      delay(1000);
+                      vTaskDelay(pdMS_TO_TICKS(1000));
                       ESP.restart();
                   }
               },
@@ -270,7 +266,8 @@ WebServer::WebServer() : server(80) {
     server.on("/show_image", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (request->hasParam("url")) {
             const String url = request->getParam("url")->value();
-            qOS::os.notify(qOS::notifyMode::QUEUED, new API_ShowImageFromUrlEvent(url));
+            auto* event = new API_ShowImageFromUrlEvent(url);
+            xQueueSend(eventQueue, &event, portMAX_DELAY);
             request->send(200, "text/plain", "Image will be shown on display!");
         } else {
             request->send(400, "text/plain", "Missing url parameter");
@@ -280,8 +277,7 @@ WebServer::WebServer() : server(80) {
     server.on("/reboot", HTTP_GET, [](AsyncWebServerRequest *request) {
         Serial.println("[WEB] Reboot requested via /reboot");
         request->send(200, "text/plain", "Rebooting ESP32...");
-        delay(500);
-#undef restart
+        vTaskDelay(pdMS_TO_TICKS(500));
         ESP.restart();
     });
 
@@ -292,7 +288,8 @@ WebServer::WebServer() : server(80) {
 
         request->send(200, "application/json",
             "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
-        qOS::os.notify(qOS::notifyMode::QUEUED, new API_KeepAliveEvent(now));
+        auto* event = new API_KeepAliveEvent(now);
+        xQueueSend(eventQueue, &event, portMAX_DELAY);
     });
 
     server.begin();
@@ -301,14 +298,15 @@ WebServer::WebServer() : server(80) {
 void WebServer::onMqttConnect(bool sessionPresent) {
     Serial.println("[MQTT] Connected!");
     mqttClient.subscribe(MQTT_TOPIC, 0);
-    qOS::os.remove(*this);
+    vTaskSuspend(xTaskGetHandle("WebServer"));
 }
 
 void WebServer::onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     Serial.print("[MQTT] Connection lost with reason: ");
     Serial.println(static_cast<int>(reason));
-    qOS::os.notify(qOS::notifyMode::QUEUED, new WEB_MqttDisconnectedEvent(reason));
-    qOS::os.add(*this, nullptr, qOS::core::LOWEST_PRIORITY, 30000, PERIODIC);
+    auto* event = new WEB_MqttDisconnectedEvent(reason);
+    xQueueSend(eventQueue, &event, portMAX_DELAY);
+    vTaskResume(xTaskGetHandle("WebServer"));
 }
 
 void WebServer::onMqttMessage(
@@ -332,7 +330,8 @@ void WebServer::onMqttMessage(
     if (error) {
         Serial.print("[DEBUG] JSON parsing error: ");
         Serial.println(error.c_str());
-        qOS::os.notify(qOS::notifyMode::QUEUED, new WEB_MqttErrorEvent("JSON Parse Error:\n" + String(error.c_str())));
+        auto* event = new WEB_MqttErrorEvent("JSON Parse Error:\n" + String(error.c_str()));
+        xQueueSend(eventQueue, &event, portMAX_DELAY);
         return;
     }
 
@@ -368,7 +367,7 @@ void WebServer::onMqttMessage(
                               : JsonArray();
         String zone = "outside-zone";
         if (!zonesArray.isNull() && zonesArray.size() > 0) {
-            zone = String(zonesArray[zonesArray.size() - 1].as<const char *>());
+            zone = String(zonesArray[zonesArray.size() - 1].as<const char *> ());
         }
 
         if (!detections.isNull() && detections.size() > 0) {
@@ -377,11 +376,13 @@ void WebServer::onMqttMessage(
                 int dashIndex = id.indexOf("-");
                 String suffix = (dashIndex > 0) ? id.substring(dashIndex + 1) : id;
                 String filename = "/events/" + suffix + "-" + zone + ".jpg";
-                qOS::os.notify(qOS::notifyMode::QUEUED, new WEB_ShowLocalImageEvent(filename));
+                auto* event = new WEB_ShowLocalImageEvent(filename);
+                xQueueSend(eventQueue, &event, portMAX_DELAY);
             }
             String url = "http://" + frigateIp + ":" + String(frigatePort) +
                          "/api/events/" + detections[0].as<String>() + "/snapshot.jpg?crop=1&height=240";
-            qOS::os.notify(qOS::notifyMode::QUEUED, new WEB_ShowImageFromUrlWithZoneEvent(url, zone));
+            auto* event = new WEB_ShowImageFromUrlWithZoneEvent(url, zone);
+            xQueueSend(eventQueue, &event, portMAX_DELAY);
         }
     }
 }
@@ -439,10 +440,13 @@ String WebServer::getCheckedAttribute(const bool isChecked) {
     return isChecked ? "checked" : "";
 }
 
-void WebServer::activities(qOS::event_t e) {
-    // Task only used for MQTT reconnects
-    mqttClient.setServer(mqttServer.c_str(), mqttPort);
-    mqttClient.setCredentials(mqttUser.c_str(), mqttPass.c_str());
-    mqttClient.connect();
-    task::activities(e);
+void WebServer::run(void *pvParameters) {
+    for (;;) {
+        if (!mqttClient.connected()) {
+            mqttClient.setServer(mqttServer.c_str(), mqttPort);
+            mqttClient.setCredentials(mqttUser.c_str(), mqttPass.c_str());
+            mqttClient.connect();
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
 }

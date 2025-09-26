@@ -5,15 +5,16 @@
 #ifndef WEBINTERFACE_H
 #define WEBINTERFACE_H
 
+#include <Arduino.h>
 #include <AsyncMqttClient.hpp>
 #include <ESPAsyncWebServer.h>
 #include <Preferences.h>
-#include <QuarkTS.h>
 
-class WebServer final : public qOS::task {
+#include "utils/Macros.h"
+
+class WebServer final {
+    SINGLETON(WebServer)
 public:
-    WebServer();
-
     void onMqttConnect(bool sessionPresent);
 
     void onMqttDisconnect(AsyncMqttClientDisconnectReason reason);
@@ -25,8 +26,7 @@ public:
     static String getImagesList();
     static String getCheckedAttribute(bool isChecked);
 
-protected:
-    void activities(qOS::event_t e) override;
+    void run(void *pvParameters);
 
 private:
     AsyncMqttClient mqttClient;

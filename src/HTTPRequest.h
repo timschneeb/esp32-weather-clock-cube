@@ -28,7 +28,6 @@ public:
         initiateRequest();
     }
 
-    // Called inside qOS::co::reenter() + yield loop
     bool isInProgress() {
         if (!inProgress)
             return false;
