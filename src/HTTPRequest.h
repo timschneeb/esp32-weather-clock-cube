@@ -33,8 +33,8 @@ public:
             return false;
 
         // Timeout check
-        if (millis() - startTime > timeoutMs) {
-            Serial.println("[HTTP] Timeout, retrying...");
+        if (timeoutMs != 0 && millis() - startTime > timeoutMs) {
+            Serial.println("[HTTP] Timeout " + String(millis() - startTime)  + "ms, retrying...");
             if (attempt < retryCount) {
                 attempt++;
                 request.abort();
@@ -60,10 +60,22 @@ private:
                 _result.statusCode = req->responseHTTPcode();
                 _result.success = _result.statusCode >= 200 && _result.statusCode < 300;
                 _result.payload = req->responseText();
+                Serial.println("[HTTP] Request finished with status " + String(_result.statusCode) + ": " + String(url));
 
                 // Only mark finished if success or retries exhausted
                 if (!_result.success && attempt < retryCount) {
                     attempt++;
+                    request.abort();
+                    initiateRequest();
+                } else {
+                    inProgress = false;
+                }
+            }
+            else if (readyState < 0) {
+                Serial.println("[HTTP] Request error " + String(readyState) + " " + String(url));
+                if (attempt < retryCount) {
+                    attempt++;
+                    request.abort();
                     initiateRequest();
                 } else {
                     inProgress = false;

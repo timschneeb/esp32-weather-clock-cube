@@ -287,6 +287,8 @@ WebServer::WebServer() : server(80) {
 
         request->send(200, "application/json",
             "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
+        // Print core
+        Serial.println("[WEB] Keep-alive on core " + String(xPortGetCoreID()));
         EventBus::instance().publish<API_KeepAliveEvent>(now);
     });
 

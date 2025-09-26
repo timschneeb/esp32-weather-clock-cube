@@ -13,8 +13,6 @@
 #include "utils/EventMacros.h"
 #include "AsyncMqttClient/DisconnectReasons.hpp"
 
-// extern QueueHandle_t eventQueue; // Obsolete: Replaced by EventBus
-
 enum class EventId {
     // NetworkService
     NET_ConnectStaNow,
@@ -63,7 +61,7 @@ REGISTER_EVENT_NOARGS(NET_Connecting);
 REGISTER_EVENT_NOARGS(NET_StaConnected);
 REGISTER_EVENT_NOARGS(NET_ApCreated);
 
-REGISTER_EVENT(API_KeepAlive, (uint64_t, now));
+REGISTER_EVENT(API_KeepAlive, (unsigned long, now));
 REGISTER_EVENT(API_ShowImageFromUrl, (String, url));
 REGISTER_EVENT(WEB_MqttDisconnected, (AsyncMqttClientDisconnectReason, reason));
 REGISTER_EVENT(WEB_MqttError, (String, message));

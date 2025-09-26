@@ -17,12 +17,12 @@ public:
 
     static String getSavedSSID();
     static bool isConnected();
+    static bool isInApMode();
 
     void run(void *pvParameters);
 
 private:
     static void enterAPMode();
-    static bool isInApMode();
 };
 
 

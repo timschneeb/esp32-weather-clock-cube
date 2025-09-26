@@ -294,7 +294,8 @@ void showClock() {
     // Temperature
     String tempValue = String(Settings::instance().weatherTempDay.load(), 1);
     String tempUnit = "÷c";
-    String humidityValue = String(static_cast<int>(Settings::instance().weatherHumidity)); // Geheel getal voor luchtvochtigheid
+    String humidityValue = String(static_cast<int>(Settings::instance().weatherHumidity));
+    // Geheel getal voor luchtvochtigheid
     String humidityUnit = "%";
     String tempMinValue = String(Settings::instance().weatherTempMin, 1);
     String tempMinUnit = "÷c";
@@ -361,7 +362,7 @@ void showClock() {
 // ------------------------
 //  Display image from API
 // ------------------------
-void displayImageFromAPI(const String& url, const String& zone) {
+void displayImageFromAPI(const String &url, const String &zone) {
     const auto displayDuration = Settings::instance().displayDuration.load();
     const int maxTries = 3;
     int tries = 0;
@@ -481,8 +482,8 @@ void displayImageFromAPI(const String& url, const String& zone) {
 }
 
 void eventHandlerTask(void *pvParameters) {
-    QueueHandle_t displayEventQueue = xQueueCreate(20, sizeof(EventPtr));
-    EventBus& eventBus = EventBus::instance();
+    QueueHandle_t displayEventQueue = xQueueCreate(20, sizeof(EventPtr*));
+    EventBus &eventBus = EventBus::instance();
     eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
     eventBus.subscribe(EventId::NET_ApCreated, displayEventQueue);
     eventBus.subscribe(EventId::API_KeepAlive, displayEventQueue);
@@ -494,19 +495,22 @@ void eventHandlerTask(void *pvParameters) {
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
     eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
 
-    EventPtr event;
     for (;;) {
-
         if (imagePending) {
-                imagePending = false;
-                displayImageFromAPI(pendingImageUrl, pendingZone);
-            }
+            imagePending = false;
+            displayImageFromAPI(pendingImageUrl, pendingZone);
+        }
 
-            if (slideshowActive) {
-                handleSlideshow();
-            }
+        if (slideshowActive) {
+            handleSlideshow();
+        }
 
-        if (xQueueReceive(displayEventQueue, &event, 1) == pdPASS) {
+        EventPtr event = EventBus::tryReceive(displayEventQueue);
+        if (event != nullptr) {
+            Serial.println(
+                ">>>> EVENT RECEIVED. ptr: " + String(reinterpret_cast<int>(event.get())) + "; ptr count: " +
+                String(event.use_count()) + "; ID: " + String(static_cast<int>(event.get()->id())));
+
             if (event != nullptr) {
                 switch (event->id()) {
                     case EventId::NET_StaConnected:
@@ -521,6 +525,8 @@ void eventHandlerTask(void *pvParameters) {
                         tft.println("IP:");
                         tft.setCursor(10, 140);
                         tft.println(WiFi.localIP());
+
+                        Serial.println("[TEST] on core " + String(xPortGetCoreID()));
                         break;
                     case EventId::NET_ApCreated:
                         setScreen("apmode", 86400, "fallbackAP");
@@ -541,6 +547,7 @@ void eventHandlerTask(void *pvParameters) {
                         break;
                     case EventId::API_KeepAlive:
                         last_keepalive_time = event->to<API_KeepAliveEvent>()->now();
+                        Serial.println("[EHT] Received keepalive at " + String(last_keepalive_time));
                         if (is_manually_sleeping || is_automatically_sleeping) {
                             is_automatically_sleeping = false;
                             is_manually_sleeping = false;
@@ -552,12 +559,16 @@ void eventHandlerTask(void *pvParameters) {
                         imagePending = true;
                         break;
                     case EventId::WEB_MqttDisconnected:
+                        const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
+                        if (reason == AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
+                            // Disconnected from broker, will auto-retry
+                            break;
+                        }
                         setScreen("error", 50, "onMqttDisconnect");
                         tft.setTextColor(TFT_RED, TFT_BLACK);
                         tft.setTextSize(2);
                         tft.setCursor(0, 0);
-                        tft.println("MQTT ERROR!");
-                        Serial.println("[MQTT] Attempting to reconnect...");
+                        tft.println("MQTT disconnected! Code: " + String(static_cast<int>(reason)));
                         break;
                     case EventId::WEB_MqttError:
                         setScreen("error", 30, "onMqttMessage");
@@ -583,7 +594,10 @@ void eventHandlerTask(void *pvParameters) {
                         break;
                     default: ;
                 }
-                // delete event; // No longer needed, shared_ptr manages memory
+
+                Serial.println(
+                    "<<<< EVENT HANDLED. ptr: " + String(reinterpret_cast<int>(event.get())) + "; unique?: " + String(
+                        event.unique()));
             }
         }
 
@@ -655,18 +669,27 @@ void setup() {
     // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
         sntp_time_was_setup = true;
-        String timezone = Settings::instance().timezone;
+        const String timezone = Settings::instance().timezone;
         Serial.printf("Setting Timezone to %s\n", timezone.c_str());
-        setenv("TZ",timezone.c_str(), 1);
+        setenv("TZ", timezone.c_str(), 1);
         tzset();
     });
 
     // eventQueue = xQueueCreate(20, sizeof(IEvent*)); // Replaced by EventBus
 
-    xTaskCreate(eventHandlerTask, "EventHandlerTask", 4096, NULL, 1, NULL);
-    xTaskCreate([](void* o){ auto s = static_cast<NetworkService*>(o); s->run(nullptr); }, "NetworkService", 4096, &NetworkService::instance(), 1, NULL);
-    xTaskCreate([](void* o){ auto s = static_cast<WeatherService*>(o); s->run(nullptr); }, "WeatherService", 4096, &WeatherService::instance(), 1, NULL);
-    xTaskCreate([](void* o){ auto s = static_cast<WebServer*>(o); s->run(nullptr); }, "WebServer", 4096, &WebServer::instance(), 1, NULL);
+    xTaskCreate(eventHandlerTask, "EventHandlerTask", 4096, nullptr, 2, nullptr);
+    xTaskCreate([](void *o) {
+        auto s = static_cast<NetworkService *>(o);
+        s->run(nullptr);
+    }, "NetworkService", 4096, &NetworkService::instance(), 1, nullptr);
+    xTaskCreate([](void *o) {
+        auto s = static_cast<WeatherService *>(o);
+        s->run(nullptr);
+    }, "WeatherService", 4096, &WeatherService::instance(), 1, nullptr);
+    xTaskCreate([](void *o) {
+        auto s = static_cast<WebServer *>(o);
+        s->run(nullptr);
+    }, "WebServer", 4096, &WebServer::instance(), 1, nullptr);
 }
 
 // ------------------------

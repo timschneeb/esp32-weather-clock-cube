@@ -10,12 +10,18 @@
 #include "EventBus.h"
 #include "Events.h"
 #include "HTTPRequest.h"
+#include "NetworkService.h"
 #include "Settings.h"
 
 WeatherService::WeatherService() = default;
 
-void WeatherService::run(void *pvParameters) {
+[[noreturn]] void WeatherService::run(void *pvParameters) {
     for (;;) {
+        if (NetworkService::isInApMode()) {
+            vTaskDelay(pdMS_TO_TICKS(5000));
+            continue;
+        }
+
         Serial.println("[WEATHER] Fetch weather started");
 
         String apiKey = Settings::instance().weatherApiKey;
@@ -40,7 +46,7 @@ void WeatherService::run(void *pvParameters) {
             httpForecastTask.startRequest("http://api.openweathermap.org/data/2.5/forecast?q=" + city + "&appid=" + apiKey + "&units=metric");
         
         while(httpNowTask.isInProgress() || (httpForecastTask.isInProgress() && !skipForecast)){
-            vTaskDelay(pdMS_TO_TICKS(100));
+            vTaskDelay(pdMS_TO_TICKS(10));
         }
 
         HTTPResult resNow = httpNowTask.result();
