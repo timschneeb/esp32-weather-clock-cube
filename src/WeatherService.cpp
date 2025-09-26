@@ -7,6 +7,7 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
+#include "EventBus.h"
 #include "Events.h"
 #include "HTTPRequest.h"
 #include "Settings.h"
@@ -100,8 +101,7 @@ void WeatherService::run(void *pvParameters) {
 
         Settings::instance().save();
         Serial.println("[WEATHER] Weather update complete");
-        auto* event = new WEA_ForecastUpdatedEvent();
-        xQueueSend(eventQueue, &event, portMAX_DELAY);
+        EventBus::instance().publish<WEA_ForecastUpdatedEvent>();
 
         vTaskDelay(pdMS_TO_TICKS(20000));
     }

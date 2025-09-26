@@ -7,6 +7,7 @@
 #include <WiFi.h>
 
 #include "Config.h"
+#include "EventBus.h"
 #include "Events.h"
 #include "Settings.h"
 
@@ -19,8 +20,7 @@ String NetworkService::getSavedSSID() {
 }
 
 void NetworkService::connectToSavedWiFi() {
-    auto* event = new NET_ConnectStaNowEvent();
-    xQueueSend(eventQueue, &event, portMAX_DELAY);
+    EventBus::instance().publish<NET_ConnectStaNowEvent>();
 }
 
 bool NetworkService::isConnected() {
@@ -40,16 +40,14 @@ void NetworkService::run(void *pvParameters) {
         if (ssid.isEmpty()) {
             Serial.println("No saved SSID, switching to AP mode...");
             enterAPMode();
-            auto* event = new NET_ApCreatedEvent();
-            xQueueSend(eventQueue, &event, portMAX_DELAY);
+            EventBus::instance().publish<NET_ApCreatedEvent>();
         } else {
             WiFiClass::mode(WIFI_STA);
             WiFi.begin(ssid.c_str(), pwd.c_str());
             WiFi.setAutoReconnect(true);
 
             Serial.println("Connecting to WiFi...");
-            auto* event = new NET_ConnectingEvent();
-            xQueueSend(eventQueue, &event, portMAX_DELAY);
+            EventBus::instance().publish<NET_ConnectingEvent>();
 
             int retries = 0;
             while (WiFiClass::status() != WL_CONNECTED && retries < 30) {
@@ -63,8 +61,7 @@ void NetworkService::run(void *pvParameters) {
             } else {
                 Serial.println("WiFi connected to: " + Settings::instance().ssid);
                 Serial.println("IP address: " + WiFi.localIP().toString());
-                auto* eventCon = new NET_StaConnectedEvent();
-                xQueueSend(eventQueue, &eventCon, portMAX_DELAY);
+                EventBus::instance().publish<NET_StaConnectedEvent>();
             }
         }
         vTaskDelay(pdMS_TO_TICKS(1000));
@@ -78,6 +75,5 @@ bool NetworkService::isInApMode() {
 void NetworkService::enterAPMode() {
     WiFiClass::mode(WIFI_AP);
     WiFi.softAP(DEFAULT_SSID, DEFAULT_PASSWORD);
-    auto* event = new NET_ApCreatedEvent();
-    xQueueSend(eventQueue, &event, portMAX_DELAY);
+    EventBus::instance().publish<NET_ApCreatedEvent>();
 }

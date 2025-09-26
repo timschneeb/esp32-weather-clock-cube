@@ -7,11 +7,13 @@
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
+#include <Arduino.h>      // For String
+#include <type_traits>    // For std::is_base_of
 
 #include "utils/EventMacros.h"
 #include "AsyncMqttClient/DisconnectReasons.hpp"
 
-extern QueueHandle_t eventQueue;
+// extern QueueHandle_t eventQueue; // Obsolete: Replaced by EventBus
 
 enum class EventId {
     // NetworkService

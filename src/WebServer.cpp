@@ -9,6 +9,7 @@
 #include <Update.h>
 
 #include "Config.h"
+#include "EventBus.h"
 #include "Events.h"
 #include "NetworkService.h"
 #include "Settings.h"
@@ -174,8 +175,7 @@ WebServer::WebServer() : server(80) {
         bool apiKeyExists = request->getParam("weatherApiKey_exists", true)->value() == "1";
         if (!apiKeyExists || newApiKey != "******") {
             preferences.putString("weatherApiKey", newApiKey);
-            auto* event = new CFG_WeatherUpdatedEvent();
-            xQueueSend(eventQueue, &event, portMAX_DELAY);
+            EventBus::instance().publish<CFG_WeatherUpdatedEvent>();
         }
         String newCity = request->getParam("weatherCity", true)->value();
         preferences.putString("weatherCity", newCity);
@@ -266,8 +266,7 @@ WebServer::WebServer() : server(80) {
     server.on("/show_image", HTTP_GET, [](AsyncWebServerRequest *request) {
         if (request->hasParam("url")) {
             const String url = request->getParam("url")->value();
-            auto* event = new API_ShowImageFromUrlEvent(url);
-            xQueueSend(eventQueue, &event, portMAX_DELAY);
+            EventBus::instance().publish<API_ShowImageFromUrlEvent>(url);
             request->send(200, "text/plain", "Image will be shown on display!");
         } else {
             request->send(400, "text/plain", "Missing url parameter");
@@ -288,8 +287,7 @@ WebServer::WebServer() : server(80) {
 
         request->send(200, "application/json",
             "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
-        auto* event = new API_KeepAliveEvent(now);
-        xQueueSend(eventQueue, &event, portMAX_DELAY);
+        EventBus::instance().publish<API_KeepAliveEvent>(now);
     });
 
     server.begin();
@@ -304,8 +302,7 @@ void WebServer::onMqttConnect(bool sessionPresent) {
 void WebServer::onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
     Serial.print("[MQTT] Connection lost with reason: ");
     Serial.println(static_cast<int>(reason));
-    auto* event = new WEB_MqttDisconnectedEvent(reason);
-    xQueueSend(eventQueue, &event, portMAX_DELAY);
+    EventBus::instance().publish<WEB_MqttDisconnectedEvent>(reason);
     vTaskResume(xTaskGetHandle("WebServer"));
 }
 
@@ -330,8 +327,7 @@ void WebServer::onMqttMessage(
     if (error) {
         Serial.print("[DEBUG] JSON parsing error: ");
         Serial.println(error.c_str());
-        auto* event = new WEB_MqttErrorEvent("JSON Parse Error:\n" + String(error.c_str()));
-        xQueueSend(eventQueue, &event, portMAX_DELAY);
+        EventBus::instance().publish<WEB_MqttErrorEvent>("JSON Parse Error:\n" + String(error.c_str()));
         return;
     }
 
@@ -376,13 +372,11 @@ void WebServer::onMqttMessage(
                 int dashIndex = id.indexOf("-");
                 String suffix = (dashIndex > 0) ? id.substring(dashIndex + 1) : id;
                 String filename = "/events/" + suffix + "-" + zone + ".jpg";
-                auto* event = new WEB_ShowLocalImageEvent(filename);
-                xQueueSend(eventQueue, &event, portMAX_DELAY);
+                EventBus::instance().publish<WEB_ShowLocalImageEvent>(filename);
             }
             String url = "http://" + frigateIp + ":" + String(frigatePort) +
                          "/api/events/" + detections[0].as<String>() + "/snapshot.jpg?crop=1&height=240";
-            auto* event = new WEB_ShowImageFromUrlWithZoneEvent(url, zone);
-            xQueueSend(eventQueue, &event, portMAX_DELAY);
+            EventBus::instance().publish<WEB_ShowImageFromUrlWithZoneEvent>(url, zone);
         }
     }
 }
@@ -450,3 +444,4 @@ void WebServer::run(void *pvParameters) {
         vTaskDelay(pdMS_TO_TICKS(1000));
     }
 }
+

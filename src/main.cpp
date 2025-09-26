@@ -23,6 +23,7 @@
 #include "Settings.h"
 #include "WeatherService.h"
 #include "WebServer.h"
+#include "EventBus.h"
 
 // Constants
 constexpr int DEBOUNCE_MS = 250;
@@ -33,7 +34,7 @@ const char *months[] = {
 };
 
 // Variables
-QueueHandle_t eventQueue;
+// QueueHandle_t eventQueue; // Replaced by EventBus
 
 String lastDrawnWeatherIcon = "";
 String lastDate = "";
@@ -480,7 +481,20 @@ void displayImageFromAPI(const String& url, const String& zone) {
 }
 
 void eventHandlerTask(void *pvParameters) {
-    IEvent* event;
+    QueueHandle_t displayEventQueue = xQueueCreate(20, sizeof(EventPtr));
+    EventBus& eventBus = EventBus::instance();
+    eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
+    eventBus.subscribe(EventId::NET_ApCreated, displayEventQueue);
+    eventBus.subscribe(EventId::API_KeepAlive, displayEventQueue);
+    eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_ShowImageFromUrlWithZone, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
+    eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
+    eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
+
+    EventPtr event;
     for (;;) {
 
         if (imagePending) {
@@ -492,7 +506,7 @@ void eventHandlerTask(void *pvParameters) {
                 handleSlideshow();
             }
 
-        if (xQueueReceive(eventQueue, &event, 1) == pdPASS) {
+        if (xQueueReceive(displayEventQueue, &event, 1) == pdPASS) {
             if (event != nullptr) {
                 switch (event->id()) {
                     case EventId::NET_StaConnected:
@@ -569,7 +583,7 @@ void eventHandlerTask(void *pvParameters) {
                         break;
                     default: ;
                 }
-                delete event;
+                // delete event; // No longer needed, shared_ptr manages memory
             }
         }
 
@@ -647,7 +661,7 @@ void setup() {
         tzset();
     });
 
-    eventQueue = xQueueCreate(20, sizeof(IEvent*));
+    // eventQueue = xQueueCreate(20, sizeof(IEvent*)); // Replaced by EventBus
 
     xTaskCreate(eventHandlerTask, "EventHandlerTask", 4096, NULL, 1, NULL);
     xTaskCreate([](void* o){ auto s = static_cast<NetworkService*>(o); s->run(nullptr); }, "NetworkService", 4096, &NetworkService::instance(), 1, NULL);
