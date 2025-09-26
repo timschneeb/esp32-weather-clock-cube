@@ -2,14 +2,13 @@
 #define EVENTBUS_H
 
 #include "Events.h"
-#include "utils/Macros.h"
+#include "../utils/Macros.h"
 
 #include <array>
 #include <freertos/FreeRTOS.h>
 #include <freertos/queue.h>
 #include <freertos/semphr.h>
 #include <memory>
-#include <vector>
 
 /**
  * @brief Defines the maximum number of event subscriptions allowed in the system.

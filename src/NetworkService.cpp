@@ -7,8 +7,8 @@
 #include <WiFi.h>
 
 #include "Config.h"
-#include "EventBus.h"
-#include "Events.h"
+#include "event/EventBus.h"
+#include "event/Events.h"
 #include "Settings.h"
 
 constexpr auto WIFI_TIMEOUT = 25000;

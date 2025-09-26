@@ -1,29 +1,29 @@
-#include <Arduino.h>
-#include <TFT_eSPI.h>
-#include <SPI.h>
-#include <WiFi.h>
-#include <AsyncTCP.h>
-#include <ESPAsyncWebServer.h>
-#include <TJpg_Decoder.h>
-#include <HTTPClient.h>
-#include <FS.h>
-#include <SPIFFS.h>
-#include <ctime>
-#include <esp_sntp.h>
-#include <ArduinoJson.h>
-#include <vector>
 #include <algorithm>
+#include <Arduino.h>
+#include <ArduinoJson.h>
+#include <AsyncTCP.h>
+#include <ctime>
+#include <ESPAsyncWebServer.h>
+#include <esp_sntp.h>
+#include <FS.h>
+#include <HTTPClient.h>
+#include <SPI.h>
+#include <SPIFFS.h>
+#include <TFT_eSPI.h>
+#include <TJpg_Decoder.h>
+#include <vector>
+#include <WiFi.h>
 // ReSharper disable once CppUnusedIncludeDirective
 #include <AsyncHTTPRequest_Generic.h> // Library doesn't handle multiple includes well, needs to be included here
 
 #include "Button.h"
 #include "Config.h"
-#include "Events.h"
 #include "NetworkService.h"
 #include "Settings.h"
 #include "WeatherService.h"
 #include "WebServer.h"
-#include "EventBus.h"
+#include "event/EventBus.h"
+#include "event/Events.h"
 
 // Constants
 constexpr int DEBOUNCE_MS = 250;

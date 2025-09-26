@@ -9,8 +9,8 @@
 #include <Update.h>
 
 #include "Config.h"
-#include "EventBus.h"
-#include "Events.h"
+#include "event/EventBus.h"
+#include "event/Events.h"
 #include "NetworkService.h"
 #include "Settings.h"
 

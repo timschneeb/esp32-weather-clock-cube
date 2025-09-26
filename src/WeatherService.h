@@ -8,7 +8,7 @@
 
 
 #include <Arduino.h>
-#include "HTTPRequest.h"
+#include "utils/HTTPRequest.h"
 #include "utils/Macros.h"
 
 class WeatherService final {

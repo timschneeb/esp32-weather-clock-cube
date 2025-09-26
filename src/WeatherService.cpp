@@ -7,9 +7,9 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
-#include "EventBus.h"
-#include "Events.h"
-#include "HTTPRequest.h"
+#include "event/EventBus.h"
+#include "event/Events.h"
+#include "utils/HTTPRequest.h"
 #include "NetworkService.h"
 #include "Settings.h"
 
