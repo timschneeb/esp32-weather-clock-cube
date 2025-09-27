@@ -6,7 +6,11 @@
 #define DIAGNOSTICS_H
 
 #include <ArduinoJson.h>
-
+/*
+ * CONFIG_FREERTOS_USE_TRACE_FACILITY=y must be set in sdkconfig to use this
+ * class. Additionally, CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y provides
+ * CPU usage info
+ */
 class Diagnostics {
 public:
     static void printTasks();

@@ -9,6 +9,9 @@ void Diagnostics::printTasks() {
 }
 
 JsonDocument Diagnostics::getTasksJson(const bool print) {
+#ifndef configUSE_TRACE_FACILITY
+    esp_system_abort("configUSE_TRACE_FACILITY must be set to 1 in sdkconfig to use Diagnostics::getTasksJson()");
+#else
     volatile UBaseType_t uxArraySize = uxTaskGetNumberOfTasks();
     auto doc = JsonDocument();
     const auto root = doc.to<JsonObject>();
@@ -36,6 +39,7 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
             ti["max_stack_usage"] = tp->usStackHighWaterMark;
             tp++;
 
+            // TODO add more; like runtime percentage
             if (print) {
                 Serial.printf("\t%-2d\t%-5d\t%-7d\t%-9d\t%-11d\t%-8d\t%s\n",
                               tp->xTaskNumber,
@@ -51,4 +55,5 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
     }
     vPortFree(pxTaskStatusArray);
     return std::move(doc);
+#endif
 }
