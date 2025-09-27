@@ -109,7 +109,7 @@ private:
     };
 
     std::array<Subscription, EVENTBUS_MAX_SUBSCRIBERS> subscriptions;
-    size_t subscriber_count = 0;
+    size_t subscriberCount = 0;
     SemaphoreHandle_t mutex;
 };
 

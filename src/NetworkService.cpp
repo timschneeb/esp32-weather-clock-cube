@@ -13,21 +13,17 @@
 
 constexpr auto WIFI_TIMEOUT = 25000;
 
-NetworkService::NetworkService() = default;
+NetworkService::NetworkService() : Task("NetworkService", 4096, 1) {}
 
 String NetworkService::getSavedSSID() {
     return Settings::instance().ssid;
-}
-
-void NetworkService::connectToSavedWiFi() {
-    EventBus::instance().publish<NET_ConnectStaNowEvent>();
 }
 
 bool NetworkService::isConnected() {
     return WiFiClass::status() == WL_CONNECTED;
 }
 
-void NetworkService::run(void *pvParameters) {
+[[noreturn]] void NetworkService::run() {
     for (;;) {
         if (isInApMode() || WiFiClass::status() == WL_CONNECTED) {
             vTaskDelay(pdMS_TO_TICKS(10000));
@@ -40,18 +36,17 @@ void NetworkService::run(void *pvParameters) {
         if (ssid.isEmpty()) {
             Serial.println("No saved SSID, switching to AP mode...");
             enterAPMode();
-            EventBus::instance().publish<NET_ApCreatedEvent>();
         } else {
+            EventBus::instance().publish<NET_ConnectingEvent>();
+            Serial.println("Connecting to WiFi...");
+
             WiFiClass::mode(WIFI_STA);
             WiFi.begin(ssid.c_str(), pwd.c_str());
             WiFi.setAutoReconnect(true);
 
-            Serial.println("Connecting to WiFi...");
-            EventBus::instance().publish<NET_ConnectingEvent>();
-
             int retries = 0;
             while (WiFiClass::status() != WL_CONNECTED && retries < 30) {
-                vTaskDelay(pdMS_TO_TICKS(250));
+                vTaskDelay(pdMS_TO_TICKS(500));
                 retries++;
             }
 

@@ -13,9 +13,9 @@
 #include "NetworkService.h"
 #include "Settings.h"
 
-WeatherService::WeatherService() = default;
+WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
 
-[[noreturn]] void WeatherService::run(void *pvParameters) {
+[[noreturn]] void WeatherService::run() {
     for (;;) {
         if (NetworkService::isInApMode()) {
             vTaskDelay(pdMS_TO_TICKS(5000));

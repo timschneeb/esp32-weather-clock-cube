@@ -15,7 +15,6 @@
 
 enum class EventId {
     // NetworkService
-    NET_ConnectStaNow,
     NET_Connecting,
     NET_StaConnected,
     NET_ApCreated,
@@ -56,7 +55,6 @@ private:
     EventId _id;
 };
 
-REGISTER_EVENT_NOARGS(NET_ConnectStaNow);
 REGISTER_EVENT_NOARGS(NET_Connecting);
 REGISTER_EVENT_NOARGS(NET_StaConnected);
 REGISTER_EVENT_NOARGS(NET_ApCreated);

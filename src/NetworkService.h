@@ -8,18 +8,19 @@
 
 
 #include <Arduino.h>
+
+#include "Task.h"
 #include "utils/Macros.h"
 
-class NetworkService final {
+class NetworkService final : public Task {
     SINGLETON(NetworkService)
 public:
-    void connectToSavedWiFi();
-
     static String getSavedSSID();
     static bool isConnected();
     static bool isInApMode();
 
-    void run(void *pvParameters);
+protected:
+    [[noreturn]] void run() override;
 
 private:
     static void enterAPMode();

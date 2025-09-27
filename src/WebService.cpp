@@ -2,7 +2,7 @@
 // Created by tim on 24.09.25.
 //
 
-#include "WebServer.h"
+#include "WebService.h"
 
 #include <ArduinoJson.h>
 #include <SPIFFS.h>
@@ -19,7 +19,7 @@ using namespace ArduinoJson;
 auto MQTT_TOPIC = "frigate/reviews";
 auto CLIENT_ID = "ESP32Client";
 
-WebServer::WebServer() : server(80) {
+WebService::WebService() : Task("WebServices", 4096, 1), server(80) {
     preferences.begin("config", false);
     mqttServer = preferences.getString("mqtt", "");
     mqttPort = preferences.getInt("mqttport", 1883);
@@ -27,9 +27,9 @@ WebServer::WebServer() : server(80) {
     mqttPass = preferences.getString("mqttpass", "");
     preferences.end();
 
-    mqttClient.onConnect(std::bind(&WebServer::onMqttConnect, this, std::placeholders::_1));
-    mqttClient.onDisconnect(std::bind(&WebServer::onMqttDisconnect, this, std::placeholders::_1));
-    mqttClient.onMessage(&WebServer::onMqttMessage);
+    mqttClient.onConnect(std::bind(&WebService::onMqttConnect, this, std::placeholders::_1));
+    mqttClient.onDisconnect(std::bind(&WebService::onMqttDisconnect, this, std::placeholders::_1));
+    mqttClient.onMessage(&WebService::onMqttMessage);
     mqttClient.setServer(mqttServer.c_str(), mqttPort);
     mqttClient.setCredentials(mqttUser.c_str(), mqttPass.c_str());
     if (NetworkService::isConnected()) {
@@ -49,9 +49,10 @@ WebServer::WebServer() : server(80) {
         const bool isDetectionChecked = mode.indexOf("detection") >= 0;
 
         const String alertCheckbox = "<input type='checkbox' id='mode_alert' name='mode_alert' value='alert' " +
-                               getCheckedAttribute(isAlertChecked) + ">";
-        const String detectionCheckbox = "<input type='checkbox' id='mode_detection' name='mode_detection' value='detection' "
-                                   + getCheckedAttribute(isDetectionChecked) + ">";
+                                     getCheckedAttribute(isAlertChecked) + ">";
+        const String detectionCheckbox =
+                "<input type='checkbox' id='mode_detection' name='mode_detection' value='detection' "
+                + getCheckedAttribute(isDetectionChecked) + ">";
 
         File file = SPIFFS.open("/index.html", "r");
         if (!file) {
@@ -286,7 +287,7 @@ WebServer::WebServer() : server(80) {
         Serial.println("[WEB] Keep-alive signal received at " + String(now));
 
         request->send(200, "application/json",
-            "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
+                      "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
         // Print core
         Serial.println("[WEB] Keep-alive on core " + String(xPortGetCoreID()));
         EventBus::instance().publish<API_KeepAliveEvent>(now);
@@ -295,20 +296,20 @@ WebServer::WebServer() : server(80) {
     server.begin();
 }
 
-void WebServer::onMqttConnect(bool sessionPresent) {
+void WebService::onMqttConnect(bool sessionPresent) {
     Serial.println("[MQTT] Connected!");
     mqttClient.subscribe(MQTT_TOPIC, 0);
-    vTaskSuspend(xTaskGetHandle("WebServer"));
+    vTaskSuspend(handle());
 }
 
-void WebServer::onMqttDisconnect(AsyncMqttClientDisconnectReason reason) {
+void WebService::onMqttDisconnect(AsyncMqttClientDisconnectReason reason) const {
     Serial.print("[MQTT] Connection lost with reason: ");
     Serial.println(static_cast<int>(reason));
     EventBus::instance().publish<WEB_MqttDisconnectedEvent>(reason);
-    vTaskResume(xTaskGetHandle("WebServer"));
+    vTaskResume(handle());
 }
 
-void WebServer::onMqttMessage(
+void WebService::onMqttMessage(
     char *topic,
     char *payload,
     AsyncMqttClientMessageProperties properties,
@@ -383,7 +384,7 @@ void WebServer::onMqttMessage(
     }
 }
 
-String WebServer::getImagesList() {
+String WebService::getImagesList() {
     String html = "<ul class='image-list'>";
     File root = SPIFFS.open("/events");
 
@@ -432,18 +433,18 @@ String WebServer::getImagesList() {
     return html;
 }
 
-String WebServer::getCheckedAttribute(const bool isChecked) {
+String WebService::getCheckedAttribute(const bool isChecked) {
     return isChecked ? "checked" : "";
 }
 
-void WebServer::run(void *pvParameters) {
+[[noreturn]] void WebService::run() {
     for (;;) {
         if (!mqttClient.connected()) {
             mqttClient.setServer(mqttServer.c_str(), mqttPort);
             mqttClient.setCredentials(mqttUser.c_str(), mqttPass.c_str());
             mqttClient.connect();
         }
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(500));
     }
 }
 

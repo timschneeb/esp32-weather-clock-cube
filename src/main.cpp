@@ -21,7 +21,7 @@
 #include "NetworkService.h"
 #include "Settings.h"
 #include "WeatherService.h"
-#include "WebServer.h"
+#include "WebService.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
 
@@ -678,18 +678,9 @@ void setup() {
     // eventQueue = xQueueCreate(20, sizeof(IEvent*)); // Replaced by EventBus
 
     xTaskCreate(eventHandlerTask, "EventHandlerTask", 4096, nullptr, 2, nullptr);
-    xTaskCreate([](void *o) {
-        auto s = static_cast<NetworkService *>(o);
-        s->run(nullptr);
-    }, "NetworkService", 4096, &NetworkService::instance(), 1, nullptr);
-    xTaskCreate([](void *o) {
-        auto s = static_cast<WeatherService *>(o);
-        s->run(nullptr);
-    }, "WeatherService", 4096, &WeatherService::instance(), 1, nullptr);
-    xTaskCreate([](void *o) {
-        auto s = static_cast<WebServer *>(o);
-        s->run(nullptr);
-    }, "WebServer", 4096, &WebServer::instance(), 1, nullptr);
+    NetworkService::instance().start();
+    WeatherService::instance().start();
+    WebService::instance().start();
 }
 
 // ------------------------

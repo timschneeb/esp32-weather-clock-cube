@@ -13,9 +13,9 @@ EventBus::~EventBus()
 void EventBus::subscribe(const EventId eventId, const QueueHandle_t queue)
 {
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-        if (subscriber_count < EVENTBUS_MAX_SUBSCRIBERS) {
-            subscriptions[subscriber_count] = { eventId, queue };
-            subscriber_count++;
+        if (subscriberCount < EVENTBUS_MAX_SUBSCRIBERS) {
+            subscriptions[subscriberCount] = { eventId, queue };
+            subscriberCount++;
         } else {
             Serial.println("[EventBus] ERROR: Max subscribers reached. Subscription failed.");
         }
@@ -26,11 +26,11 @@ void EventBus::subscribe(const EventId eventId, const QueueHandle_t queue)
 void EventBus::unsubscribe(const EventId eventId, const QueueHandle_t queue)
 {
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-        for (size_t i = 0; i < subscriber_count; ++i) {
+        for (size_t i = 0; i < subscriberCount; ++i) {
             if (subscriptions[i].eventId == eventId && subscriptions[i].queue == queue) {
                 // Found the subscriber, remove it by swapping with the last element
-                subscriptions[i] = subscriptions[subscriber_count - 1];
-                subscriber_count--;
+                subscriptions[i] = subscriptions[subscriberCount - 1];
+                subscriberCount--;
                 break; // Exit after removing the first match
             }
         }
@@ -45,7 +45,7 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait) cons
 
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
         Serial.println("[EventBus] Publishing event ID " + String(static_cast<int>(event->id())));
-        for (size_t i = 0; i < subscriber_count; ++i) {
+        for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
                 auto* heapEventPtr = new EventPtr(std::move(event));
@@ -66,7 +66,7 @@ void EventBus::publishUrgent(const EventPtr &event, const TickType_t ticksToWait
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
         Serial.println("[EventBus] Urgently publishing event ID " + String(static_cast<int>(event->id())));
 
-        for (size_t i = 0; i < subscriber_count; ++i) {
+        for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
                 auto* heapEventPtr = new EventPtr(std::move(event));

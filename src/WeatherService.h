@@ -5,16 +5,15 @@
 #ifndef WEATHERSERVICE_H
 #define WEATHERSERVICE_H
 
-
-
-#include <Arduino.h>
+#include "Task.h"
 #include "utils/HTTPRequest.h"
 #include "utils/Macros.h"
 
-class WeatherService final {
+class WeatherService final : public Task {
     SINGLETON(WeatherService)
-public:
-    void run(void *pvParameters);
+
+protected:
+    [[noreturn]] void run() override;
 
 private:
     HTTPRequest httpNowTask;
