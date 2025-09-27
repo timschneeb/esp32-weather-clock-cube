@@ -4,10 +4,9 @@
 // Modified from https://github.com/summivox/esp32-cpp-boilerplate/blob/master/main/common/macros.hpp
 
 #include <atomic>
-
-#include "esp_err.h"
-#include "freertos/FreeRTOS.h"
-#include "freertos/task.h"
+#include <esp_err.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 /// Bare-minimum wrapper base class for a FreeRTOS task. This allows encapsulation of a task
 /// alongside with its context.

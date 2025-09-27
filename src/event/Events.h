@@ -6,11 +6,10 @@
 #define EVENTS_H
 
 #include <freertos/FreeRTOS.h>
-#include <freertos/queue.h>
 #include <Arduino.h>      // For String
 #include <type_traits>    // For std::is_base_of
 
-#include "../utils/EventMacros.h"
+#include "utils/EventMacros.h"
 #include "AsyncMqttClient/DisconnectReasons.hpp"
 
 enum class EventId {

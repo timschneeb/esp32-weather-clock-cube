@@ -2,7 +2,7 @@
 #define EVENTBUS_H
 
 #include "Events.h"
-#include "../utils/Macros.h"
+#include "utils/Macros.h"
 
 #include <array>
 #include <freertos/FreeRTOS.h>

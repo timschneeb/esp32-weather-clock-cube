@@ -19,10 +19,10 @@
 
 #include "Button.h"
 #include "Config.h"
-#include "NetworkService.h"
 #include "Settings.h"
-#include "WeatherService.h"
-#include "WebService.h"
+#include "services/NetworkService.h"
+#include "services/WeatherService.h"
+#include "services/WebService.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
 
@@ -548,7 +548,7 @@ void eventHandlerTask(void *) {
                     pendingImageUrl = event->to<API_ShowImageFromUrlEvent>()->url();
                     imagePending = true;
                     break;
-                case EventId::WEB_MqttDisconnected:
+                case EventId::WEB_MqttDisconnected: {
                     const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
                     if (reason == AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
                         // Disconnected from broker, will auto-retry
@@ -560,6 +560,7 @@ void eventHandlerTask(void *) {
                     tft.setCursor(0, 0);
                     tft.println("MQTT lost!\nCode: " + String(static_cast<int>(reason)));
                     break;
+                }
                 case EventId::WEB_MqttError:
                     setScreen("error", 30, "onMqttMessage");
                     tft.setTextColor(TFT_RED);
@@ -613,9 +614,9 @@ void eventHandlerTask(void *) {
     }
 }
 
-#define panic(msg) _panic(msg, __func__, __LINE__, __FILE__);
+#define panic(msg) panic_internal(msg, __func__, __LINE__, __FILE__);
 
-void _panic(const char *msg, const char *func, int line, const char *file) {
+void panic_internal(const char *msg, const char *func, int line, const char *file) {
     setBrightness(1);
     tft.setTextColor(TFT_RED);
     tft.setTextSize(3);

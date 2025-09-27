@@ -8,7 +8,7 @@
 #include <Arduino.h>
 #include <AsyncHTTPRequest_Generic.hpp>
 
-#include "NetworkService.h"
+#include "services/NetworkService.h"
 
 struct HTTPResult {
     String payload;        // Response body

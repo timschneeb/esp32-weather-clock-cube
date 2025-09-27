@@ -10,7 +10,7 @@
 #include <Update.h>
 
 #include "Config.h"
-#include "NetworkService.h"
+#include "services/NetworkService.h"
 #include "Settings.h"
 #include "event/EventBus.h"
 #include "event/Events.h"

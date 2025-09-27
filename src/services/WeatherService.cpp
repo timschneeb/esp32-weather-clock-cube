@@ -10,7 +10,7 @@
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "utils/HTTPRequest.h"
-#include "NetworkService.h"
+#include "services/NetworkService.h"
 #include "Settings.h"
 
 WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
