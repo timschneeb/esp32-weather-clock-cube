@@ -77,6 +77,26 @@ void setBrightness(int brt) {
     ledcWrite(TFT_BL_PWM_CHANNEL, 255 - brt);
 }
 
+#define panic(msg) panic_internal(msg, __func__, __LINE__, __FILE__);
+
+void panic_internal(const char *msg, const char *func, const int line, const char *file) {
+    setBrightness(1);
+    tft.setTextColor(TFT_RED);
+    tft.setTextSize(3);
+    tft.println("=== PANIC ===");
+    tft.setTextColor(TFT_ORANGE);
+    tft.setTextSize(2);
+    tft.println();
+    tft.println(msg);
+    tft.println();
+    tft.println(line > 0 ? String(func) + "+" + String(line) : String(func));
+    tft.println("in " + String(file));
+    tft.flush();
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
+    }
+}
+
 // ------------------------
 //  JPEG render callback
 // ------------------------
@@ -584,6 +604,9 @@ void eventHandlerTask(void * /*unused*/) {
                     break;
                 case EventId::CFG_WeatherUpdated:
                     break;
+                case EventId::COR_Panic:
+                    panic_internal(event->to<COR_PanicEvent>()->details().c_str(), "COR_Panic event", 0, "EventBus");
+                    break;
                 default: ;
             }
         }
@@ -611,26 +634,6 @@ void eventHandlerTask(void * /*unused*/) {
         }
 
         button.tick();
-    }
-}
-
-#define panic(msg) panic_internal(msg, __func__, __LINE__, __FILE__);
-
-void panic_internal(const char *msg, const char *func, const int line, const char *file) {
-    setBrightness(1);
-    tft.setTextColor(TFT_RED);
-    tft.setTextSize(3);
-    tft.println("=== PANIC ===");
-    tft.setTextColor(TFT_ORANGE);
-    tft.setTextSize(2);
-    tft.println();
-    tft.println(msg);
-    tft.println();
-    tft.println(String(func) + "+" + String(line));
-    tft.println("in " + String(file));
-    tft.flush();
-    while (true) {
-        vTaskDelay(portMAX_DELAY);
     }
 }
 

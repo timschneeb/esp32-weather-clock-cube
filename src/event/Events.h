@@ -12,6 +12,8 @@
 #include "AsyncMqttClient/DisconnectReasons.hpp"
 
 enum class EventId {
+    COR_Panic,
+
     // NetworkService
     NET_Connecting,
     NET_StaConnected,
@@ -52,6 +54,8 @@ protected:
 private:
     EventId _id;
 };
+
+REGISTER_EVENT(COR_Panic, (String, details));
 
 REGISTER_EVENT_NOARGS(NET_Connecting);
 REGISTER_EVENT_NOARGS(NET_StaConnected);
