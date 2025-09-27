@@ -4,7 +4,7 @@
 
 #include "Settings.h"
 
-Settings::Settings() {
+Settings::Settings() { // NOLINT(*-pro-type-member-init)
     load();
 }
 

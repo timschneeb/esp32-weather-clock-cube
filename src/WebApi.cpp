@@ -9,6 +9,8 @@
 #include <SPIFFS.h>
 #include <Update.h>
 
+#include <algorithm>
+
 #include "Config.h"
 #include "services/NetworkService.h"
 #include "Settings.h"
@@ -40,11 +42,11 @@ WebApi::WebApi(): server(80) {
 }
 
 void WebApi::setOnMqttConfigChanged(const OnMqttConfigChangedCb &callback) {
-    onMqttConfigChanged = std::move(callback);
+    onMqttConfigChanged = callback;
 }
 
 void WebApi::onRootRequest(AsyncWebServerRequest *request) {
-    const auto config = &Settings::instance();
+    const auto *const config = &Settings::instance();
     String mode = config->mode;
     mode.toLowerCase();
     const bool isAlertChecked = mode.indexOf("alert") >= 0;
@@ -99,7 +101,7 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
 
 void WebApi::onSaveRequest(AsyncWebServerRequest *request) {
     // Safe integer fetch helper
-    auto getIntParam = [](AsyncWebServerRequest *req, const char *name, int def) -> int {
+    auto getIntParam = [](const AsyncWebServerRequest *req, const char *name, const int def) -> int {
         if (req->getParam(name, true)) {
             const String v = req->getParam(name, true)->value();
             if (v.length() > 0)
@@ -159,17 +161,11 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) {
     preferences.putInt("sec", newSec);
 
     int newMaxImages = getIntParam(request, "maxImages", 0);
-    if (newMaxImages < 1)
-        newMaxImages = 1;
-    if (newMaxImages > 60)
-        newMaxImages = 60;
+    newMaxImages = std::min(std::max(newMaxImages, 1), 60);
     preferences.putInt("maxImages", newMaxImages);
 
     int newSlideshowInterval = getIntParam(request, "slideshowInterval", 0);
-    if (newSlideshowInterval < 500)
-        newSlideshowInterval = 3000;
-    if (newSlideshowInterval > 20000)
-        newSlideshowInterval = 20000;
+    newSlideshowInterval = std::min(std::max(newSlideshowInterval, 500), 20000);
     preferences.putInt("slideInterval", newSlideshowInterval);
 
     // Modes
@@ -243,9 +239,9 @@ void WebApi::onUpdatePostRequest(AsyncWebServerRequest *request) {
     }
 }
 
-void WebApi::onUpdatePostUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,
-                                size_t len, bool final) {
-    if (!index) {
+void WebApi::onUpdatePostUpload(AsyncWebServerRequest *request, const String &filename, const size_t index, uint8_t *data,
+                                const size_t len, const bool final) {
+    if (index == 0U) {
         Update.begin();
     }
     if (!Update.hasError()) {
@@ -324,7 +320,7 @@ String WebApi::getImagesList() {
     struct FileInfo {
         String name;
         String displayName;
-        unsigned long mtime;
+        unsigned long mtime = 0;
     };
     std::vector<FileInfo> files;
 

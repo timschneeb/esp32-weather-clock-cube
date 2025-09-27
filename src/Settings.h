@@ -45,7 +45,7 @@ public:
 #undef DECL_PRIMITIVE_PROPERTY
 
 private:
-    Preferences preferences = Preferences();
+    Preferences preferences;
 };
 
 

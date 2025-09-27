@@ -12,26 +12,26 @@
 
 struct HTTPResult {
     String payload;        // Response body
-    int statusCode;        // HTTP status code
-    bool success;          // True if >=200 and <300
+    int statusCode = 0;    // HTTP status code
+    bool success = false;  // True if >=200 and <300
 };
 
 class HTTPRequest {
 public:
-    HTTPRequest() : inProgress(false), startTime(0), attempt(0), retryCount(0), timeoutMs(10000), _result() {}
+    HTTPRequest() : _inProgress(false), _attempt(0), _retryCount(0), _timeoutMs(10000), _startTime(0) {}
 
     void startRequest(const String& url, const uint32_t retryCount = 3, const uint32_t timeoutMs = 10000) {
-        this->url = url;
-        this->timeoutMs = timeoutMs;
-        this->retryCount = retryCount;
-        attempt = 0;
+        _url = url;
+        _timeoutMs = timeoutMs;
+        _retryCount = retryCount;
+        _attempt = 0;
         _result = {};
-        inProgress = true;
+        _inProgress = true;
         initiateRequest();
     }
 
     bool isInProgress() {
-        if (!inProgress)
+        if (!_inProgress)
             return false;
 
         if (!NetworkService::isConnected()) {
@@ -41,18 +41,18 @@ public:
         }
 
         // Timeout check
-        if (timeoutMs != 0 && millis() - startTime > timeoutMs) {
-            Serial.println("[HTTP] Timeout " + String(millis() - startTime)  + "ms, retrying...");
-            if (attempt < retryCount) {
-                attempt++;
+        if (_timeoutMs != 0 && millis() - _startTime > _timeoutMs) {
+            Serial.println("[HTTP] Timeout " + String(millis() - _startTime)  + "ms, retrying...");
+            if (_attempt < _retryCount) {
+                _attempt++;
                 request.abort();
                 initiateRequest();
             } else {
-                inProgress = false;
+                _inProgress = false;
             }
         }
 
-        return inProgress;
+        return _inProgress;
     }
 
     HTTPResult result() const { return _result; }
@@ -60,33 +60,33 @@ public:
 private:
     void initiateRequest() {
         _result = {};
-        startTime = millis();
+        _startTime = millis();
 
-        request.open("GET", url.c_str());
+        request.open("GET", _url.c_str());
         request.onReadyStateChange([this](void*, AsyncHTTPRequest* req, const int readyState) {
             if (readyState == 4) {
                 _result.statusCode = req->responseHTTPcode();
                 _result.success = _result.statusCode >= 200 && _result.statusCode < 300;
                 _result.payload = req->responseText();
-                Serial.println("[HTTP] Request finished with status " + String(_result.statusCode) + ": " + String(url));
+                Serial.println("[HTTP] Request finished with status " + String(_result.statusCode) + ": " + String(_url));
 
                 // Only mark finished if success or retries exhausted
-                if (!_result.success && attempt < retryCount) {
-                    attempt++;
+                if (!_result.success && _attempt < _retryCount) {
+                    _attempt++;
                     request.abort();
                     initiateRequest();
                 } else {
-                    inProgress = false;
+                    _inProgress = false;
                 }
             }
             else if (readyState < 0) {
-                Serial.println("[HTTP] Request error " + String(readyState) + " " + String(url));
-                if (attempt < retryCount) {
-                    attempt++;
+                Serial.println("[HTTP] Request error " + String(readyState) + " " + String(_url));
+                if (_attempt < _retryCount) {
+                    _attempt++;
                     request.abort();
                     initiateRequest();
                 } else {
-                    inProgress = false;
+                    _inProgress = false;
                 }
             }
         });
@@ -94,12 +94,12 @@ private:
     }
 
     AsyncHTTPRequest request;
-    String url;
-    bool inProgress;
-    uint64_t startTime;
-    uint32_t attempt;
-    uint32_t retryCount;
-    uint32_t timeoutMs;
+    String _url;
+    bool _inProgress;
+    uint64_t _startTime;
+    uint32_t _attempt;
+    uint32_t _retryCount;
+    uint32_t _timeoutMs;
     HTTPResult _result;
 };
 

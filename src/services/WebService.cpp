@@ -67,7 +67,7 @@ void WebService::onMqttMessage(
 {
     String payloadStr;
     for (size_t i = 0; i < len; i++)
-        payloadStr += (char)payload[i];
+        payloadStr += payload[i];
     Serial.println("====[MQTT RECEIVED]====");
     Serial.print("Topic:   ");
     Serial.println(topic);

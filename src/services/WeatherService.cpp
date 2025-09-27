@@ -7,6 +7,8 @@
 #include <ArduinoJson.h>
 #include <WiFi.h>
 
+#include <algorithm>
+
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "utils/HTTPRequest.h"
@@ -39,7 +41,7 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
         strftime(buf, sizeof(buf), "%Y-%m-%d", tm_now);
         String todayStr(buf);
 
-        auto skipForecast = todayStr == Settings::instance().weatherDay && !(Settings::instance().weatherTempMin == 0.0 && Settings::instance().weatherTempMax == 0.0);
+        auto skipForecast = todayStr == Settings::instance().weatherDay && (Settings::instance().weatherTempMin != 0.0 || Settings::instance().weatherTempMax != 0.0);
 
         httpNowTask.startRequest("http://api.openweathermap.org/data/2.5/weather?q=" + city + "&appid=" + apiKey + "&units=metric");
         if (!skipForecast)
@@ -81,10 +83,8 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
                     for (JsonObject entry : doc["list"].as<JsonArray>()) {
                         auto dt_txt = entry["dt_txt"].as<String>();
                         if (dt_txt.startsWith(todayStr)) {
-                            float tempMin = entry["main"]["temp_min"] | 0.0f;
-                            float tempMax = entry["main"]["temp_max"] | 0.0f;
-                            if (tempMin < minTemp) minTemp = tempMin;
-                            if (tempMax > maxTemp) maxTemp = tempMax;
+                            minTemp = std::min(entry["main"]["temp_min"] | 0.0f, minTemp);
+                            maxTemp = std::max(entry["main"]["temp_max"] | 0.0f, maxTemp);
                         }
                     }
 

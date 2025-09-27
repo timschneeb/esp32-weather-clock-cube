@@ -48,7 +48,7 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait) cons
         for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
-                auto* heapEventPtr = new EventPtr(std::move(event));
+                auto* heapEventPtr = new EventPtr(event);
                 Serial.println("[EventBus]\tto subscriber " + String(i) + "; ref_count_before_send: " + String(heapEventPtr->use_count()));
                 xQueueSend(sub.queue, &heapEventPtr, ticksToWait);
                 Serial.println("[EventBus]\tto subscriber " + String(i) + "; ref_count_after_send: " + String(heapEventPtr->use_count()));
@@ -69,7 +69,7 @@ void EventBus::publishUrgent(const EventPtr &event, const TickType_t ticksToWait
         for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
-                auto* heapEventPtr = new EventPtr(std::move(event));
+                auto* heapEventPtr = new EventPtr(event);
                 xQueueSendToFront(sub.queue, &heapEventPtr, ticksToWait);
             }
         }

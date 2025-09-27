@@ -16,8 +16,8 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
     auto doc = JsonDocument();
     const auto root = doc.to<JsonObject>();
     const auto tasks = root["tasks"].to<JsonArray>();
-    const auto pxTaskStatusArray = static_cast<TaskStatus_t *>(pvPortMalloc(uxArraySize * sizeof(TaskStatus_t)));
-    if (pxTaskStatusArray) {
+    auto *const pxTaskStatusArray = static_cast<TaskStatus_t *>(pvPortMalloc(uxArraySize * sizeof(TaskStatus_t)));
+    if (pxTaskStatusArray != nullptr) {
         uint32_t ulTotalRunTime;
         uxArraySize = uxTaskGetSystemState(pxTaskStatusArray, uxArraySize, &ulTotalRunTime);
         root["rt"] = ulTotalRunTime;

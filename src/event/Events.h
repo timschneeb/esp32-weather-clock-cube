@@ -5,7 +5,6 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#include <freertos/FreeRTOS.h>
 #include <Arduino.h>      // For String
 #include <type_traits>    // For std::is_base_of
 

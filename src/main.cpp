@@ -37,8 +37,8 @@ const char *months[] = {
 String lastDrawnWeatherIcon = "";
 String lastDate = "";
 String currentScreen = "clock"; // ["clock", "event", "status", "error"]
-TFT_eSPI tft = TFT_eSPI();
-Button button = Button();
+auto tft = TFT_eSPI();
+auto button = Button();
 
 unsigned long lastClockUpdate = 0;
 unsigned long lastKeyTime = 0;
@@ -80,7 +80,7 @@ void setBrightness(int brt) {
 // ------------------------
 //  JPEG render callback
 // ------------------------
-bool jpgRenderCallback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *bitmap) {
+bool jpgRenderCallback(const int16_t x, const int16_t y, const uint16_t w, const uint16_t h, uint16_t *bitmap) {
     tft.pushImage(x, y, w, h, bitmap);
     return true;
 }
@@ -89,7 +89,7 @@ bool jpgRenderCallback(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t *b
 //  Slideshow handler
 // ------------------------
 void handleSlideshow() {
-    unsigned long now = millis();
+    const unsigned long now = millis();
 
     // Check if slideshow is active and jpgQueue is not empty
     if (!slideshowActive || jpgQueue.empty()) {
@@ -109,14 +109,14 @@ void handleSlideshow() {
 
     // Check if it's time for the next image
     if (now - slideshowStart >= currentSlideshowIdx * Settings::instance().slideshowInterval) {
-        String filename = jpgQueue[currentSlideshowIdx % jpgQueue.size()];
+        const String& filename = jpgQueue[currentSlideshowIdx % jpgQueue.size()];
         if (SPIFFS.exists(filename)) {
             File file = SPIFFS.open(filename, FILE_READ);
             if (file) {
-                uint32_t fileSize = file.size();
-                uint8_t *jpgData = (uint8_t *) malloc(fileSize);
-                if (jpgData) {
-                    size_t bytesRead = file.readBytes((char *) jpgData, fileSize);
+                const auto fileSize = file.size();
+                auto *jpgData = static_cast<uint8_t *>(malloc(fileSize));
+                if (jpgData != nullptr) {
+                    const size_t bytesRead = file.readBytes(reinterpret_cast<char *>(jpgData), fileSize);
                     file.close();
                     if (bytesRead == fileSize) {
                         tft.fillScreen(TFT_BLACK);
@@ -141,7 +141,7 @@ void handleSlideshow() {
 // ------------------------
 //  STATE-based screen management
 // ------------------------
-void setScreen(const String &newScreen, unsigned long timeoutSec, const char *by) {
+void setScreen(const String &newScreen, const unsigned long timeoutSec, const char *by) {
     Serial.printf("setScreen: from %s to %s (timeout: %lu sec) by: %s\n", currentScreen.c_str(), newScreen.c_str(),
                   timeoutSec, by);
 
@@ -150,7 +150,7 @@ void setScreen(const String &newScreen, unsigned long timeoutSec, const char *by
     unsigned long now = millis();
     eventCallTimes.erase(
         std::remove_if(eventCallTimes.begin(), eventCallTimes.end(),
-                       [now, displayDuration](unsigned long t) { return now - t > displayDuration * 1000UL; }),
+                       [now, displayDuration](const unsigned long t) { return now - t > displayDuration * 1000UL; }),
         eventCallTimes.end()
     );
 
@@ -173,14 +173,14 @@ void setScreen(const String &newScreen, unsigned long timeoutSec, const char *by
             handleSlideshow();
         } else if (!slideshowActive && !jpgQueue.empty()) {
             // Display single image
-            String filename = jpgQueue[0];
+            const String& filename = jpgQueue[0];
             if (SPIFFS.exists(filename)) {
                 File file = SPIFFS.open(filename, FILE_READ);
                 if (file) {
-                    uint32_t fileSize = file.size();
-                    uint8_t *jpgData = (uint8_t *) malloc(fileSize);
-                    if (jpgData) {
-                        size_t bytesRead = file.readBytes((char *) jpgData, fileSize);
+                    const uint32_t fileSize = file.size();
+                    auto *jpgData = static_cast<uint8_t *>(malloc(fileSize));
+                    if (jpgData != nullptr) {
+                        const size_t bytesRead = file.readBytes(reinterpret_cast<char *>(jpgData), fileSize);
                         file.close();
                         if (bytesRead == fileSize) {
                             //tft.fillScreen(TFT_BLACK);
@@ -198,7 +198,7 @@ void setScreen(const String &newScreen, unsigned long timeoutSec, const char *by
         }
 
         currentScreen = "event";
-        screenTimeout = (timeoutSec == 0) ? 0 : timeoutSec * 1000UL;
+        screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
         screenSince = now;
         return;
     }
@@ -216,21 +216,21 @@ void setScreen(const String &newScreen, unsigned long timeoutSec, const char *by
             eventCallTimes.clear();
         }
     }
-    screenTimeout = (timeoutSec == 0) ? 0 : timeoutSec * 1000UL;
+    screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
     screenSince = now;
 }
 
 // ------------------------
 //  Weather icon
 // ------------------------
-void showWeatherIconJPG(String iconCode) {
-    String path = "/icons/" + iconCode + ".jpg";
+void showWeatherIconJPG(const String& iconCode) {
+    const String path = "/icons/" + iconCode + ".jpg";
     Serial.print("Search icon: ");
     Serial.println(path);
-    int iconWidth = 90;
-    int iconHeight = 90;
-    int x = 240 - iconWidth - 8;
-    int y = 240 - iconHeight - 8;
+    constexpr int iconWidth = 90;
+    constexpr int iconHeight = 90;
+    constexpr int x = 240 - iconWidth - 8;
+    constexpr int y = 240 - iconHeight - 8;
     if (SPIFFS.exists(path)) {
         TJpgDec.drawJpg(x, y, path.c_str());
         Serial.print("[WEATHER] Icon drawn: ");
@@ -238,7 +238,7 @@ void showWeatherIconJPG(String iconCode) {
     } else {
         Serial.print("[WEATHER] Icon NOT found: ");
         Serial.println(path);
-        int pad = 10;
+        constexpr int pad = 10;
         tft.drawLine(x + pad, y + pad, x + iconWidth - pad, y + iconHeight - pad, TFT_RED);
         tft.drawLine(x + iconWidth - pad, y + pad, x + pad, y + iconHeight - pad, TFT_RED);
         tft.drawRect(x, y, iconWidth, iconHeight, TFT_RED);
@@ -258,7 +258,7 @@ void showClock() {
     if (now < 100000) {
         Serial.println("[showClock] Time not yet synchronized.");
     }
-    struct tm *tm_info = localtime(&now);
+    tm *tm_info = localtime(&now);
     if (!tm_info) return;
 
     // Date
@@ -290,14 +290,14 @@ void showClock() {
     }
 
     // Temperature
-    String tempValue = String(Settings::instance().weatherTempDay.load(), 1);
+    auto tempValue = String(Settings::instance().weatherTempDay.load(), 1);
     String tempUnit = "÷c";
-    String humidityValue = String(static_cast<int>(Settings::instance().weatherHumidity));
+    auto humidityValue = String(static_cast<int>(Settings::instance().weatherHumidity));
     // Geheel getal voor luchtvochtigheid
     String humidityUnit = "%";
-    String tempMinValue = String(Settings::instance().weatherTempMin, 1);
+    auto tempMinValue = String(Settings::instance().weatherTempMin, 1);
     String tempMinUnit = "÷c";
-    String tempMaxValue = String(Settings::instance().weatherTempMax, 1);
+    auto tempMaxValue = String(Settings::instance().weatherTempMax, 1);
     String tempMaxUnit = "÷c";
 
 
@@ -362,11 +362,11 @@ void showClock() {
 // ------------------------
 void displayImageFromAPI(const String &url, const String &zone) {
     const auto displayDuration = Settings::instance().displayDuration.load();
-    const int maxTries = 3;
+    constexpr int maxTries = 3;
     int tries = 0;
     bool success = false;
     String lastErrorReason = "";
-    const size_t MAX_FILE_SIZE = 70 * 1024;
+    constexpr size_t MAX_FILE_SIZE = 70 * 1024;
 
     // Construct detectionId from URL
     String detectionId = url.substring(url.lastIndexOf("/events/") + 8, url.indexOf("/snapshot.jpg"));
@@ -404,12 +404,12 @@ void displayImageFromAPI(const String &url, const String &zone) {
                 return;
             }
 
-            // Remove oldest image if maxImages is reached
-            int jpgCount = 0;
+            // Remove the oldest image if maxImages is reached
             String oldestFile = "";
             unsigned long oldestTime = ULONG_MAX;
             File root = SPIFFS.open("/events");
             if (root && root.isDirectory()) {
+                int jpgCount = 0;
                 File file = root.openNextFile();
                 while (file) {
                     String fname = file.name();
@@ -435,13 +435,13 @@ void displayImageFromAPI(const String &url, const String &zone) {
 
             WiFiClient *stream = http.getStreamPtr();
             auto *jpgData = static_cast<uint8_t *>(malloc(len));
-            if (!jpgData) {
+            if (jpgData == nullptr) {
                 Serial.println("[ERROR] Memory allocation failed!");
                 http.end();
                 return;
             }
 
-            if (stream->available()) {
+            if (stream->available() != 0) {
                 size_t bytesRead = stream->readBytes(reinterpret_cast<char *>(jpgData), len);
                 File file = SPIFFS.open(filename, FILE_WRITE);
                 if (file) {
@@ -479,7 +479,7 @@ void displayImageFromAPI(const String &url, const String &zone) {
     }
 }
 
-void eventHandlerTask(void *) {
+void eventHandlerTask(void * /*unused*/) {
     const QueueHandle_t displayEventQueue = xQueueCreate(20, sizeof(EventPtr*));
     EventBus &eventBus = EventBus::instance();
     eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
@@ -616,7 +616,7 @@ void eventHandlerTask(void *) {
 
 #define panic(msg) panic_internal(msg, __func__, __LINE__, __FILE__);
 
-void panic_internal(const char *msg, const char *func, int line, const char *file) {
+void panic_internal(const char *msg, const char *func, const int line, const char *file) {
     setBrightness(1);
     tft.setTextColor(TFT_RED);
     tft.setTextSize(3);
