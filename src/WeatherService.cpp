@@ -17,7 +17,7 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
 
 [[noreturn]] void WeatherService::run() {
     for (;;) {
-        if (NetworkService::isInApMode()) {
+        if (NetworkService::isInApMode() || !NetworkService::isConnected()) {
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }

@@ -69,7 +69,7 @@ void setScreen(const String &newScreen, unsigned long timeoutSec = 0, const char
 // ------------------------
 //  Backlight
 // ------------------------
-void set_tft_brt(int brt) {
+void setBrightness(int brt) {
     // prevent setting brightness when sleeping
     if (is_manually_sleeping || is_automatically_sleeping)
         brt = 0;
@@ -551,7 +551,7 @@ void eventHandlerTask(void *pvParameters) {
                         if (is_manually_sleeping || is_automatically_sleeping) {
                             is_automatically_sleeping = false;
                             is_manually_sleeping = false;
-                            set_tft_brt(Settings::instance().brightness);
+                            setBrightness(Settings::instance().brightness);
                         }
                         break;
                     case EventId::API_ShowImageFromUrl:
@@ -620,10 +620,29 @@ void eventHandlerTask(void *pvParameters) {
                 ", last keepalive: " + String(last_keepalive_time));
             is_automatically_sleeping = true;
             last_keepalive_time = 0;
-            set_tft_brt(0);
+            setBrightness(0);
         }
 
         button.tick();
+    }
+}
+
+#define panic(msg) _panic(msg, __func__, __LINE__, __FILE__);
+void _panic(const char *msg, const char *func, int line, const char *file) {
+    setBrightness(1);
+    tft.setTextColor(TFT_RED);
+    tft.setTextSize(3);
+    tft.println("=== PANIC ===");
+    tft.setTextColor(TFT_ORANGE);
+    tft.setTextSize(2);
+    tft.println();
+    tft.println(msg);
+    tft.println();
+    tft.println(String(func)+"+"+String(line));
+    tft.println("in " + String(file));
+    tft.flush();
+    while (true) {
+        vTaskDelay(portMAX_DELAY);
     }
 }
 
@@ -631,41 +650,35 @@ void eventHandlerTask(void *pvParameters) {
 // Arduino setup()
 // ------------------------
 void setup() {
+    ledcSetup(TFT_BL_PWM_CHANNEL, 5000, 8);
+    ledcAttachPin(TFT_BL, TFT_BL_PWM_CHANNEL);
+    setBrightness(0);
+
     Serial.begin(115200);
 
     tft.begin();
     tft.setRotation(0);
     tft.fillScreen(TFT_BLACK);
 
-    ledcSetup(TFT_BL_PWM_CHANNEL, 5000, 8);
-    ledcAttachPin(TFT_BL, TFT_BL_PWM_CHANNEL);
-    set_tft_brt(0);
-
     if (!SPIFFS.begin(true)) {
-        Serial.println("SPIFFS Mount Failed");
-        setScreen("error", 30, "setup_error");
-        tft.setTextColor(TFT_RED);
-        tft.setTextSize(2);
-        tft.println("SPIFFS failed");
-        while (true) {
-            delay(1000);
-        }
+        Serial.println("Failed to mount SPIFFS! Did you forget to flash the filesystem?");
+        panic("SPIFFS init failed\nFile system missing");
     }
 
     button.begin();
     button.attachClick([] {
         is_manually_sleeping = !is_manually_sleeping;
         is_automatically_sleeping = false;
-        set_tft_brt(Settings::instance().brightness);
+        setBrightness(Settings::instance().brightness);
         last_keepalive_time = 0;
     });
 
-    set_tft_brt(Settings::instance().brightness);
+    setBrightness(Settings::instance().brightness);
 
     TJpgDec.setCallback(jpgRenderCallback);
     TJpgDec.setSwapBytes(true);
 
-    configTime(0, 0, "pool.ntp.org");
+    esp_sntp_set_sync_interval(3600 * 1000); // Sync every hour
     // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
         sntp_time_was_setup = true;
@@ -674,8 +687,8 @@ void setup() {
         setenv("TZ", timezone.c_str(), 1);
         tzset();
     });
+    configTime(0, 0, SNTP_SERVER);
 
-    // eventQueue = xQueueCreate(20, sizeof(IEvent*)); // Replaced by EventBus
 
     xTaskCreate(eventHandlerTask, "EventHandlerTask", 4096, nullptr, 2, nullptr);
     NetworkService::instance().start();

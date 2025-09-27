@@ -4,6 +4,7 @@
 
 #include "NetworkService.h"
 
+#include <esp_sntp.h>
 #include <WiFi.h>
 
 #include "Config.h"
@@ -25,6 +26,16 @@ bool NetworkService::isConnected() {
 
 [[noreturn]] void NetworkService::run() {
     for (;;) {
+        // If initial time sync hasn't completed yet, retry
+        if (isConnected() && !isInApMode() &&
+            time(nullptr) < 100000 &&
+            sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED &&
+            sntp_get_sync_status() != SNTP_SYNC_STATUS_IN_PROGRESS) {
+
+            Serial.println("Restarting SNTP time sync...");
+            configTime(0, 0, SNTP_SERVER);
+        }
+
         if (isInApMode() || WiFiClass::status() == WL_CONNECTED) {
             vTaskDelay(pdMS_TO_TICKS(10000));
             continue;
@@ -38,7 +49,7 @@ bool NetworkService::isConnected() {
             enterAPMode();
         } else {
             EventBus::instance().publish<NET_ConnectingEvent>();
-            Serial.println("Connecting to WiFi...");
+            Serial.println("Connecting to WiFi... (SSID: " + ssid + ")");
 
             WiFiClass::mode(WIFI_STA);
             WiFi.begin(ssid.c_str(), pwd.c_str());

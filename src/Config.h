@@ -18,6 +18,9 @@
 #define DEFAULT_SSID "ESP32_AP"
 #define DEFAULT_PASSWORD "admin1234"
 
+// SNTP
+#define SNTP_SERVER "pool.ntp.org"
+
 // Timeouts
 #define KEEPALIVE_TIMEOUT (5 * 60 * 1000) /* 5 minutes */
 

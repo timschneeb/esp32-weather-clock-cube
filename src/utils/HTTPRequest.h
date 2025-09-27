@@ -8,6 +8,8 @@
 #include <Arduino.h>
 #include <AsyncHTTPRequest_Generic.hpp>
 
+#include "NetworkService.h"
+
 struct HTTPResult {
     String payload;        // Response body
     int statusCode;        // HTTP status code
@@ -31,6 +33,12 @@ public:
     bool isInProgress() {
         if (!inProgress)
             return false;
+
+        if (!NetworkService::isConnected()) {
+            Serial.println("[HTTP] Network disconnected, aborting request...");
+            request.abort();
+            return false;
+        }
 
         // Timeout check
         if (timeoutMs != 0 && millis() - startTime > timeoutMs) {
