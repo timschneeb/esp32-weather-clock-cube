@@ -7,10 +7,10 @@
 
 #include <Arduino.h>
 #include <AsyncMqttClient.hpp>
-#include <ESPAsyncWebServer.h>
 #include <Preferences.h>
 
 #include "Task.h"
+#include "WebApi.h"
 #include "utils/Macros.h"
 
 class WebService final : public Task {
@@ -18,25 +18,18 @@ class WebService final : public Task {
 public:
     void onMqttConnect(bool sessionPresent);
     void onMqttDisconnect(AsyncMqttClientDisconnectReason reason) const;
-    static void onMqttMessage(char *topic, char *payload,
-                              AsyncMqttClientMessageProperties properties,
-                              size_t len, size_t index, size_t total);
-
-    static String getImagesList();
-    static String getCheckedAttribute(bool isChecked);
+    static void onMqttMessage(char* topic, char* payload,
+        AsyncMqttClientMessageProperties properties,
+        size_t len, size_t index, size_t total);
 
 protected:
     [[noreturn]] void run() override;
 
 private:
     AsyncMqttClient mqttClient;
-    AsyncWebServer server;
-    Preferences preferences;
+    WebApi api;
 
-    String mqttServer = "";
-    int mqttPort = 1883;
-    String mqttUser = "";
-    String mqttPass = "";
+    void setupMqttFromSettings();
 };
 
-#endif //WEBINTERFACE_H
+#endif // WEBINTERFACE_H
