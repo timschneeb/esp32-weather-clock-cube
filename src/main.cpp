@@ -13,6 +13,7 @@
 #include <TJpg_Decoder.h>
 #include <vector>
 #include <WiFi.h>
+
 // ReSharper disable once CppUnusedIncludeDirective
 #include <AsyncHTTPRequest_Generic.h> // Library doesn't handle multiple includes well, needs to be included here
 
@@ -26,7 +27,6 @@
 #include "event/Events.h"
 
 // Constants
-constexpr int DEBOUNCE_MS = 250;
 constexpr unsigned long CLOCK_REFRESH_INTERVAL = 1000UL; // 1 second
 const char *daysShort[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char *months[] = {
@@ -34,8 +34,6 @@ const char *months[] = {
 };
 
 // Variables
-// QueueHandle_t eventQueue; // Replaced by EventBus
-
 String lastDrawnWeatherIcon = "";
 String lastDate = "";
 String currentScreen = "clock"; // ["clock", "event", "status", "error"]
@@ -46,10 +44,10 @@ unsigned long lastClockUpdate = 0;
 unsigned long lastKeyTime = 0;
 unsigned long screenTimeout = 0;
 unsigned long screenSince = 0;
-boolean sntp_time_was_setup = false;
-unsigned long last_keepalive_time = 0;
-boolean is_manually_sleeping = false;
-boolean is_automatically_sleeping = false;
+boolean sntpTimeWasSetup = false;
+unsigned long lastKeepaliveTime = 0;
+boolean isManuallySleeping = false;
+boolean isAutomaticallySleeping = false;
 // --- Slideshow ---
 String pendingImageUrl = "";
 bool imagePending = false;
@@ -70,8 +68,8 @@ void setScreen(const String &newScreen, unsigned long timeoutSec = 0, const char
 //  Backlight
 // ------------------------
 void setBrightness(int brt) {
-    // prevent setting brightness when sleeping
-    if (is_manually_sleeping || is_automatically_sleeping)
+    // Prevent setting brightness when sleeping
+    if (isManuallySleeping || isAutomaticallySleeping)
         brt = 0;
 
     brt = constrain(brt, 0, 255);
@@ -481,8 +479,8 @@ void displayImageFromAPI(const String &url, const String &zone) {
     }
 }
 
-void eventHandlerTask(void *pvParameters) {
-    QueueHandle_t displayEventQueue = xQueueCreate(20, sizeof(EventPtr*));
+void eventHandlerTask(void *) {
+    const QueueHandle_t displayEventQueue = xQueueCreate(20, sizeof(EventPtr*));
     EventBus &eventBus = EventBus::instance();
     eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
     eventBus.subscribe(EventId::NET_ApCreated, displayEventQueue);
@@ -507,97 +505,85 @@ void eventHandlerTask(void *pvParameters) {
 
         EventPtr event = EventBus::tryReceive(displayEventQueue);
         if (event != nullptr) {
-            Serial.println(
-                ">>>> EVENT RECEIVED. ptr: " + String(reinterpret_cast<int>(event.get())) + "; ptr count: " +
-                String(event.use_count()) + "; ID: " + String(static_cast<int>(event.get()->id())));
-
-            if (event != nullptr) {
-                switch (event->id()) {
-                    case EventId::NET_StaConnected:
-                        setScreen("statusWiFi", 5, "show_wifi_status");
-                        tft.setTextColor(TFT_GREEN, TFT_BLACK);
-                        tft.setTextSize(2);
-                        tft.setCursor(10, 40);
-                        tft.println("Connected to:");
-                        tft.setCursor(10, 70);
-                        tft.println(NetworkService::getSavedSSID());
-                        tft.setCursor(10, 110);
-                        tft.println("IP:");
-                        tft.setCursor(10, 140);
-                        tft.println(WiFi.localIP());
-
-                        Serial.println("[TEST] on core " + String(xPortGetCoreID()));
-                        break;
-                    case EventId::NET_ApCreated:
-                        setScreen("apmode", 86400, "fallbackAP");
-                        tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-                        tft.setTextSize(2);
-                        tft.setCursor(10, 30);
-                        tft.println("WiFi not connected");
-                        tft.setTextSize(3);
-                        tft.setCursor(20, 60);
-                        tft.println("**AP MODE**");
-                        tft.setTextSize(2);
-                        tft.setCursor(10, 110);
-                        tft.println("SSID: " + String(DEFAULT_SSID));
-                        tft.setCursor(10, 140);
-                        tft.println("PWD: " + String(DEFAULT_PASSWORD));
-                        tft.setCursor(10, 170);
-                        tft.println("IP: " + WiFi.softAPIP().toString());
-                        break;
-                    case EventId::API_KeepAlive:
-                        last_keepalive_time = event->to<API_KeepAliveEvent>()->now();
-                        Serial.println("[EHT] Received keepalive at " + String(last_keepalive_time));
-                        if (is_manually_sleeping || is_automatically_sleeping) {
-                            is_automatically_sleeping = false;
-                            is_manually_sleeping = false;
-                            setBrightness(Settings::instance().brightness);
-                        }
-                        break;
-                    case EventId::API_ShowImageFromUrl:
-                        pendingImageUrl = event->to<API_ShowImageFromUrlEvent>()->url();
-                        imagePending = true;
-                        break;
-                    case EventId::WEB_MqttDisconnected:
-                        const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
-                        if (reason == AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
-                            // Disconnected from broker, will auto-retry
-                            break;
-                        }
-                        setScreen("error", 50, "onMqttDisconnect");
-                        tft.setTextColor(TFT_RED, TFT_BLACK);
-                        tft.setTextSize(2);
-                        tft.setCursor(0, 0);
-                        tft.println("MQTT disconnected! Code: " + String(static_cast<int>(reason)));
-                        break;
-                    case EventId::WEB_MqttError:
-                        setScreen("error", 30, "onMqttMessage");
-                        tft.setTextColor(TFT_RED);
-                        tft.setTextSize(2);
-                        tft.println(event->to<WEB_MqttErrorEvent>()->message());
-                        break;
-                    case EventId::WEB_ShowImageFromUrlWithZone:
-                        pendingImageUrl = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url();
-                        pendingZone = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone();
-                        imagePending = true;
-                        break;
-                    case EventId::WEB_ShowLocalImage: {
-                        const auto file = event->to<WEB_ShowLocalImageEvent>()->filename();
-                        if (std::find(jpgQueue.begin(), jpgQueue.end(), file) == jpgQueue.end()) {
-                            jpgQueue.push_back(file);
-                        }
+            switch (event->id()) {
+                case EventId::NET_StaConnected:
+                    setScreen("statusWiFi", 5, "show_wifi_status");
+                    tft.setTextColor(TFT_GREEN, TFT_BLACK);
+                    tft.setTextSize(2);
+                    tft.setCursor(10, 40);
+                    tft.println("Connected to:");
+                    tft.setCursor(10, 70);
+                    tft.println(NetworkService::getSavedSSID());
+                    tft.setCursor(10, 110);
+                    tft.println("IP:");
+                    tft.setCursor(10, 140);
+                    tft.println(WiFi.localIP());
+                    break;
+                case EventId::NET_ApCreated:
+                    setScreen("apmode", 86400, "fallbackAP");
+                    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
+                    tft.setTextSize(2);
+                    tft.setCursor(10, 30);
+                    tft.println("WiFi not connected");
+                    tft.setTextSize(3);
+                    tft.setCursor(20, 60);
+                    tft.println("**AP MODE**");
+                    tft.setTextSize(2);
+                    tft.setCursor(10, 110);
+                    tft.println("SSID: " + String(DEFAULT_SSID));
+                    tft.setCursor(10, 140);
+                    tft.println("PWD: " + String(DEFAULT_PASSWORD));
+                    tft.setCursor(10, 170);
+                    tft.println("IP: " + WiFi.softAPIP().toString());
+                    break;
+                case EventId::API_KeepAlive:
+                    lastKeepaliveTime = event->to<API_KeepAliveEvent>()->now();
+                    if (isManuallySleeping || isAutomaticallySleeping) {
+                        isAutomaticallySleeping = false;
+                        isManuallySleeping = false;
+                        setBrightness(Settings::instance().brightness);
+                    }
+                    break;
+                case EventId::API_ShowImageFromUrl:
+                    pendingImageUrl = event->to<API_ShowImageFromUrlEvent>()->url();
+                    imagePending = true;
+                    break;
+                case EventId::WEB_MqttDisconnected:
+                    const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
+                    if (reason == AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
+                        // Disconnected from broker, will auto-retry
                         break;
                     }
-                    case EventId::CFG_Updated:
-                        break;
-                    case EventId::CFG_WeatherUpdated:
-                        break;
-                    default: ;
+                    setScreen("error", 50, "onMqttDisconnect");
+                    tft.setTextColor(TFT_RED, TFT_BLACK);
+                    tft.setTextSize(2);
+                    tft.setCursor(0, 0);
+                    tft.println("MQTT lost!\nCode: " + String(static_cast<int>(reason)));
+                    break;
+                case EventId::WEB_MqttError:
+                    setScreen("error", 30, "onMqttMessage");
+                    tft.setTextColor(TFT_RED);
+                    tft.setTextSize(2);
+                    tft.setCursor(0, 0);
+                    tft.println(event->to<WEB_MqttErrorEvent>()->message());
+                    break;
+                case EventId::WEB_ShowImageFromUrlWithZone:
+                    pendingImageUrl = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url();
+                    pendingZone = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone();
+                    imagePending = true;
+                    break;
+                case EventId::WEB_ShowLocalImage: {
+                    const auto file = event->to<WEB_ShowLocalImageEvent>()->filename();
+                    if (std::find(jpgQueue.begin(), jpgQueue.end(), file) == jpgQueue.end()) {
+                        jpgQueue.push_back(file);
+                    }
+                    break;
                 }
-
-                Serial.println(
-                    "<<<< EVENT HANDLED. ptr: " + String(reinterpret_cast<int>(event.get())) + "; unique?: " + String(
-                        event.unique()));
+                case EventId::CFG_Updated:
+                    break;
+                case EventId::CFG_WeatherUpdated:
+                    break;
+                default: ;
             }
         }
 
@@ -605,8 +591,8 @@ void eventHandlerTask(void *pvParameters) {
             setScreen("clock", 0, "timeout");
         }
 
-        if (sntp_time_was_setup) {
-            sntp_time_was_setup = false;
+        if (sntpTimeWasSetup) {
+            sntpTimeWasSetup = false;
             if (currentScreen == "clock") showClock();
         }
 
@@ -614,12 +600,12 @@ void eventHandlerTask(void *pvParameters) {
             showClock();
         }
 
-        if (last_keepalive_time > 0 && millis() - last_keepalive_time > KEEPALIVE_TIMEOUT) {
+        if (lastKeepaliveTime > 0 && millis() - lastKeepaliveTime > KEEPALIVE_TIMEOUT) {
             Serial.println(
                 "[AutoSleep] Entering automatic sleep mode due to inactivity. Now: " + String(millis()) +
-                ", last keepalive: " + String(last_keepalive_time));
-            is_automatically_sleeping = true;
-            last_keepalive_time = 0;
+                ", last keepalive: " + String(lastKeepaliveTime));
+            isAutomaticallySleeping = true;
+            lastKeepaliveTime = 0;
             setBrightness(0);
         }
 
@@ -628,6 +614,7 @@ void eventHandlerTask(void *pvParameters) {
 }
 
 #define panic(msg) _panic(msg, __func__, __LINE__, __FILE__);
+
 void _panic(const char *msg, const char *func, int line, const char *file) {
     setBrightness(1);
     tft.setTextColor(TFT_RED);
@@ -638,7 +625,7 @@ void _panic(const char *msg, const char *func, int line, const char *file) {
     tft.println();
     tft.println(msg);
     tft.println();
-    tft.println(String(func)+"+"+String(line));
+    tft.println(String(func) + "+" + String(line));
     tft.println("in " + String(file));
     tft.flush();
     while (true) {
@@ -667,10 +654,10 @@ void setup() {
 
     button.begin();
     button.attachClick([] {
-        is_manually_sleeping = !is_manually_sleeping;
-        is_automatically_sleeping = false;
+        isManuallySleeping = !isManuallySleeping;
+        isAutomaticallySleeping = false;
         setBrightness(Settings::instance().brightness);
-        last_keepalive_time = 0;
+        lastKeepaliveTime = 0;
     });
 
     setBrightness(Settings::instance().brightness);
@@ -681,7 +668,7 @@ void setup() {
     esp_sntp_set_sync_interval(3600 * 1000); // Sync every hour
     // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
-        sntp_time_was_setup = true;
+        sntpTimeWasSetup = true;
         const String timezone = Settings::instance().timezone;
         Serial.printf("Setting Timezone to %s\n", timezone.c_str());
         setenv("TZ", timezone.c_str(), 1);
