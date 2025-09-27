@@ -7,9 +7,7 @@
 
 #include "Config.h"
 
-extern "C" {
-    typedef void (*OnClickEventHandler)();
-}
+typedef std::function<void()> OnClickEventHandler;
 
 class Button {
 public:

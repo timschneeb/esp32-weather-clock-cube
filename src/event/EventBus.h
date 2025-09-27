@@ -51,8 +51,9 @@ public:
      * @param ticksToWait The time in ticks to wait for space to become available on a subscriber's
      * queue. Defaults to 0 (do not block). If a subscriber's queue is full and this is 0, the
      * event will be DROPPED for that subscriber.
+     * @param urgent If true, the event is placed at the FRONT of the subscriber's queue.
      */
-    void publish(const EventPtr &event, TickType_t ticksToWait = 0) const;
+    void publish(const EventPtr &event, TickType_t ticksToWait = 0, const bool urgent = false) const;
 
     /**
      * @brief A convenience template to create and publish an event in one call.
@@ -70,23 +71,6 @@ public:
     }
 
     /**
-     * @brief Checks for an event on a specific queue, optionally blocking.
-     * @param queue The handle to the queue to check.
-     * @param ticksToWait The time in ticks to wait for an event to become available. Defaults to 0 (do not block).
-     * @return An EventPtr containing the event if one was received, otherwise a nullptr.
-     */
-    static EventPtr tryReceive(QueueHandle_t queue, TickType_t ticksToWait = 0);
-
-    /**
-     * @brief Publishes a high-priority event to all subscribers.
-     * @details This places the event at the FRONT of the subscriber's queue.
-     * Other behavior is identical to publish().
-     * @param event A shared_ptr to the event to be published.
-     * @param ticksToWait The time in ticks to wait for space to become available.
-     */
-    void publishUrgent(const EventPtr &event, TickType_t ticksToWait = portMAX_DELAY) const;
-
-    /**
      * @brief A convenience template to create and publish a high-priority event.
      * @details Places the event at the FRONT of the subscriber's queue.
      * NOTE: This convenience overload always uses the default timeout of portMAX_DELAY.
@@ -97,8 +81,17 @@ public:
     template <typename T, typename... Args>
     void publishUrgent(Args&&... args)
     {
-        publishUrgent(std::make_shared<T>(std::forward<Args>(args)...), portMAX_DELAY);
+        publish(std::make_shared<T>(std::forward<Args>(args)...), portMAX_DELAY, true);
     }
+
+    /**
+     * @brief Checks for an event on a specific queue, optionally blocking.
+     * @param queue The handle to the queue to check.
+     * @param ticksToWait The time in ticks to wait for an event to become available. Defaults to 0 (do not block).
+     * @return An EventPtr containing the event if one was received, otherwise a nullptr.
+     */
+    static EventPtr tryReceive(QueueHandle_t queue, TickType_t ticksToWait = 0);
+
 
 private:
     ~EventBus();
