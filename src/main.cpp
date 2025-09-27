@@ -17,14 +17,14 @@
 // ReSharper disable once CppUnusedIncludeDirective
 #include <AsyncHTTPRequest_Generic.h> // Library doesn't handle multiple includes well, needs to be included here
 
-#include "Button.h"
 #include "Config.h"
 #include "Settings.h"
+#include "event/EventBus.h"
+#include "event/Events.h"
+#include "hardware/Button.h"
 #include "services/NetworkService.h"
 #include "services/WeatherService.h"
 #include "services/WebService.h"
-#include "event/EventBus.h"
-#include "event/Events.h"
 
 // Constants
 constexpr unsigned long CLOCK_REFRESH_INTERVAL = 1000UL; // 1 second
