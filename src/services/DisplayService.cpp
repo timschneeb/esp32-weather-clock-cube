@@ -4,79 +4,94 @@
 #include <ArduinoJson.h>
 #include <HTTPClient.h>
 #include <SPIFFS.h>
-#include <TJpg_Decoder.h>
+#include <TFT_eSPI.h>
+#include <memory>
 
 #include "Config.h"
 #include "Settings.h"
-#include "display/ApModeScreen.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "services/NetworkService.h"
-#include "display/ImageScreen.h"
+#include "services/display/Screen.h"
+#include "LvglTask.h"
+#include "services/display/ClockScreen.h"
+#include "services/display/ErrorScreen.h"
+#include "services/display/StatusScreen.h"
+#include "services/display/ImageScreen.h"
+#include "services/display/ApModeScreen.h"
 
-DisplayService::DisplayService() : Task("DisplayService", 8192, 2) {}
+static TFT_eSPI tft = TFT_eSPI();
+
+static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
+    uint32_t w = (area->x2 - area->x1 + 1);
+    uint32_t h = (area->y2 - area->y1 + 1);
+
+    // Use pushImage with byte-swapping enabled to match LVGL's color format
+    tft.startWrite();
+    tft.pushImage(area->x1, area->y1, w, h, (uint16_t *)color_p);
+    tft.endWrite();
+
+    lv_disp_flush_ready(disp_drv);
+}
+
+static void touch_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
+    uint16_t touchX, touchY;
+    bool touched = tft.getTouch(&touchX, &touchY, TOUCH_THRESHOLD);
+
+    if (!touched) {
+        data->state = LV_INDEV_STATE_REL;
+    } else {
+        data->state = LV_INDEV_STATE_PR;
+        data->point.x = touchX;
+        data->point.y = touchY;
+    }
+}
+
+DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
 void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     backlight.wake();
     backlight.setBrightness(255);
-    tft.setTextColor(TFT_RED);
-    tft.setTextSize(3);
-    tft.println("=== PANIC ===");
-    tft.setTextColor(TFT_ORANGE);
-    tft.setTextSize(2);
-    tft.println();
-    tft.println(msg);
-    tft.println();
-    tft.println(line > 0 ? String(func) + "+" + String(line) : String(func));
-    tft.println("in " + String(file));
-    tft.flush();
+    
+    lv_obj_clean(lv_scr_act());
+    lv_obj_t* scr = lv_scr_act();
+    lv_obj_set_style_bg_color(scr, lv_color_hex(0xff0000), LV_PART_MAIN);
+    
+    lv_obj_t* label = lv_label_create(scr);
+    lv_label_set_text(label, "PANIC");
+    lv_obj_set_style_text_color(label, lv_color_hex(0xffffff), LV_PART_MAIN);
+    lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 10);
+
+    lv_obj_t* msg_label = lv_label_create(scr);
+    lv_label_set_text_fmt(msg_label, "%s\n%s+%d\n%s", msg, func, line, file);
+    lv_obj_set_style_text_color(msg_label, lv_color_hex(0xffffff), LV_PART_MAIN);
+    lv_obj_align(msg_label, LV_ALIGN_CENTER, 0, 0);
+
     while (true) {
-        vTaskDelay(portMAX_DELAY);
-    }
-}
-
-bool DisplayService::jpgRenderCallback(const int16_t x, const int16_t y, const uint16_t w, const uint16_t h, uint16_t *bitmap) {
-    tft.pushImage(x, y, w, h, bitmap);
-    return true;
-}
-
-void DisplayService::handleSlideshow() {
-    const unsigned long now = millis();
-
-    if (!slideshowActive || jpgQueue.empty()) {
-        slideshowActive = false;
-        return;
-    }
-
-    if (now - slideshowStart >= Settings::instance().displayDuration * 1000UL) {
-        slideshowActive = false;
-        jpgQueue.clear();
-        eventCallTimes.clear();
-        setScreen(std::unique_ptr<ClockScreen>(new ClockScreen()), 0);
-        return;
-    }
-
-    if (now - slideshowStart >= currentSlideshowIdx * Settings::instance().slideshowInterval) {
-        const String& filename = jpgQueue[currentSlideshowIdx % jpgQueue.size()];
-        setScreen(std::unique_ptr<ImageScreen>(new ImageScreen(filename)), 0);
-        currentSlideshowIdx++;
+        lv_timer_handler();
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
 
 void DisplayService::setScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
     currentScreen = std::move(newScreen);
-    currentScreen->draw(tft);
-    screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
-    screenSince = millis();
+    lv_obj_t* scr = lv_obj_create(nullptr);
+    currentScreen->draw(scr);
+    lv_scr_load(scr);
 }
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
-    overlayScreen.reset(new StatusScreen(message, duration));
-    overlayScreen->draw(tft);
+    lv_obj_t* label = lv_label_create(lv_layer_top());
+    lv_label_set_text(label, message.c_str());
+    lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
+
+    lv_timer_t* timer = lv_timer_create([](lv_timer_t* timer) {
+        lv_obj_del_async((lv_obj_t*)timer->user_data);
+    }, duration, label);
+    lv_timer_set_repeat_count(timer, 1);
 }
 
 void DisplayService::displayImageFromAPI(const String &url, const String &zone) {
-    const auto displayDuration = Settings::instance().displayDuration.load();
     constexpr int maxTries = 3;
     int tries = 0;
     bool success = false;
@@ -103,60 +118,19 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
         if (httpCode == 200) {
             uint32_t len = http.getSize();
             if (len > MAX_FILE_SIZE) {
-                setScreen(std::unique_ptr<ErrorScreen>(new ErrorScreen("Image too large")), 5);
+                setScreen(std::unique_ptr<Screen>(new ErrorScreen("Image too large")), 5);
                 http.end();
                 return;
             }
 
-            String oldestFile = "";
-            unsigned long oldestTime = ULONG_MAX;
-            File root = SPIFFS.open("/events");
-            if (root && root.isDirectory()) {
-                int jpgCount = 0;
-                File file = root.openNextFile();
-                while (file) {
-                    String fname = file.name();
-                    if (fname.endsWith(".jpg")) {
-                        jpgCount++;
-                        if (!fname.startsWith("/")) {
-                            fname = "/events/" + fname;
-                        }
-                        unsigned long mtime = file.getLastWrite();
-                        if (mtime < oldestTime) {
-                            oldestTime = mtime;
-                            oldestFile = fname;
-                        }
-                    }
-                    file = root.openNextFile();
+            File file = SPIFFS.open(filename, FILE_WRITE);
+            if (file) {
+                size_t written = http.writeToStream(&file);
+                file.close();
+                if (written == len) {
+                    success = true;
+                    setScreen(std::unique_ptr<Screen>(new ImageScreen(filename)), Settings::instance().displayDuration);
                 }
-                root.close();
-                if (jpgCount >= Settings::instance().maxImages && !oldestFile.isEmpty()) {
-                    SPIFFS.remove(oldestFile);
-                }
-            }
-
-            WiFiClient *stream = http.getStreamPtr();
-            auto *jpgData = static_cast<uint8_t *>(malloc(len));
-            if (jpgData == nullptr) {
-                http.end();
-                return;
-            }
-
-            if (stream->available() != 0) {
-                size_t bytesRead = stream->readBytes(reinterpret_cast<char *>(jpgData), len);
-                File file = SPIFFS.open(filename, FILE_WRITE);
-                if (file) {
-                    size_t written = file.write(jpgData, len);
-                    file.close();
-                    if (written == len) {
-                        success = true;
-                        if (std::find(jpgQueue.begin(), jpgQueue.end(), filename) == jpgQueue.end()) {
-                            jpgQueue.push_back(filename);
-                        }
-                        setScreen(std::unique_ptr<ImageScreen>(new ImageScreen(filename)), displayDuration);
-                    }
-                }
-                free(jpgData);
             }
             http.end();
         } else {
@@ -168,14 +142,15 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     }
 
     if (!success) {
-        setScreen(std::unique_ptr<ErrorScreen>(new ErrorScreen("Loading failed: " + lastErrorReason)), 5);
+        setScreen(std::unique_ptr<Screen>(new ErrorScreen("Loading failed: " + lastErrorReason)), 5);
     }
 }
 
 [[noreturn]] void DisplayService::run() {
     tft.begin();
     tft.setRotation(0);
-    tft.fillScreen(TFT_BLACK);
+    // Ensure TFT_eSPI expects LVGL's little-endian color order
+    tft.setSwapBytes(true);
 
     button.begin();
     button.attachClick([this] {
@@ -185,10 +160,30 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
 
     backlight.setBrightness(Settings::instance().brightness);
 
-    TJpgDec.setSwapBytes(true);
-    TJpgDec.setCallback([](const int16_t x, const int16_t y, const uint16_t w, const uint16_t h, uint16_t *bitmap) {
-        return instance().jpgRenderCallback(x, y, w, h, bitmap);
-    });
+    lv_init();
+
+    const uint32_t buf_pixels = 240 * 10; // 10 lines buffer
+    buf1 = (lv_color_t *) heap_caps_malloc(buf_pixels * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    buf2 = (lv_color_t *) heap_caps_malloc(buf_pixels * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    lv_disp_draw_buf_init(&draw_buf, buf1, buf2, buf_pixels);
+
+    lv_disp_drv_init(&disp_drv);
+    disp_drv.hor_res = 240;
+    disp_drv.ver_res = 240;
+    disp_drv.flush_cb = flush_cb;
+    disp_drv.draw_buf = &draw_buf;
+    lv_disp_drv_register(&disp_drv);
+
+    // Touch input not present on this hardware; do not register a touch driver to avoid
+    // TFT_eSPI attempting to access a non-existent touch controller (causes gpio_set_level errors).
+    // If you add a touch controller, re-enable the code below and configure pins in User_Setup.h.
+    // static lv_indev_drv_t indev_drv;
+    // lv_indev_drv_init(&indev_drv);
+    // indev_drv.type = LV_INDEV_TYPE_POINTER;
+    // indev_drv.read_cb = touch_cb;
+    // lv_indev_drv_register(&indev_drv);
+
+    // Process LVGL in this task to keep LVGL single-threaded
 
     const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));
     EventBus &eventBus = EventBus::instance();
@@ -203,85 +198,52 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
     eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
 
-    setScreen(std::unique_ptr<ClockScreen>(new ClockScreen()), 0);
+    setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
 
     for (;;) {
-        if (imagePending) {
-            imagePending = false;
-            displayImageFromAPI(pendingImageUrl, pendingZone);
-        }
-
-        if (slideshowActive) {
-            handleSlideshow();
-        }
-
         EventPtr event = EventBus::tryReceive(displayEventQueue);
         if (event != nullptr) {
             switch (event->id()) {
-                case EventId::NET_StaConnected:
-                    showOverlay("WiFi Connected\n" + WiFi.localIP().toString(), 5000);
-                    break;
                 case EventId::NET_ApCreated:
-                    setScreen(std::unique_ptr<ApModeScreen>(new ApModeScreen()), 86400);
-                    break;
-                case EventId::API_KeepAlive:
-                    lastKeepaliveTime = event->to<API_KeepAliveEvent>()->now();
-                    if (backlight.isSleeping() && !backlight.isSleepingByPowerButton()) {
-                        backlight.wake();
-                    }
+                    setScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
                     break;
                 case EventId::API_ShowImageFromUrl:
-                    pendingImageUrl = event->to<API_ShowImageFromUrlEvent>()->url();
-                    imagePending = true;
+                    displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url(), "");
+                    break;
+                case EventId::WEB_ShowImageFromUrlWithZone:
+                    displayImageFromAPI(event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url(), event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone());
                     break;
                 case EventId::WEB_MqttDisconnected: {
                     const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
                     if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
-                        setScreen(std::unique_ptr<ErrorScreen>(new ErrorScreen("MQTT Disconnected")), 50);
+                        setScreen(std::unique_ptr<Screen>(new ErrorScreen("MQTT Disconnected")), 50);
                     }
                     break;
                 }
                 case EventId::WEB_MqttError:
-                    setScreen(std::unique_ptr<ErrorScreen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
+                    setScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
                     break;
-                case EventId::WEB_ShowImageFromUrlWithZone:
-                    pendingImageUrl = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url();
-                    pendingZone = event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone();
-                    imagePending = true;
-                    break;
-                case EventId::WEB_ShowLocalImage: {
-                    const auto file = event->to<WEB_ShowLocalImageEvent>()->filename();
-                    if (std::find(jpgQueue.begin(), jpgQueue.end(), file) == jpgQueue.end()) {
-                        jpgQueue.push_back(file);
-                    }
-                    break;
-                }
                 case EventId::CFG_Updated:
                 case EventId::CFG_WeatherUpdated:
                     showOverlay("Data updated", 10000);
-                    // The clock screen will pick up the changes automatically
                     break;
-                default: ;
+                default:
+                    break;
             }
         }
 
-        if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
-            setScreen(std::unique_ptr<ClockScreen>(new ClockScreen()), 0);
+        static unsigned long screenTimeout = 0;
+        static unsigned long screenSince = 0;
+
+        if (currentScreen) {
+            if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
+                setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+                screenTimeout = 0;
+            }
         }
 
         if (currentScreen) {
-            currentScreen->update(tft);
-        }
-
-        if (overlayScreen) {
-            if (overlayScreen->isExpired()) {
-                overlayScreen.reset();
-                // Redraw current screen to remove overlay
-                if(currentScreen) currentScreen->draw(tft);
-            } else {
-                overlayScreen->draw(tft);
-                overlayScreen->update(tft);
-            }
+            currentScreen->update();
         }
 
         if (lastKeepaliveTime > 0 && millis() - lastKeepaliveTime > KEEPALIVE_TIMEOUT) {
@@ -289,7 +251,10 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
             lastKeepaliveTime = 0;
         }
 
+        // Let LVGL process timers and rendering
+        lv_timer_handler();
+
         button.tick();
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }

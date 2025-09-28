@@ -1,29 +1,13 @@
 #include "ImageScreen.h"
 
-#include <TJpg_Decoder.h>
-#include <SPIFFS.h>
-
 ImageScreen::ImageScreen(const String& filename) : filename(filename) {}
 
-void ImageScreen::draw(TFT_eSPI& tft) {
-    if (SPIFFS.exists(filename)) {
-        File file = SPIFFS.open(filename, FILE_READ);
-        if (file) {
-            const auto fileSize = file.size();
-            auto *jpgData = static_cast<uint8_t *>(malloc(fileSize));
-            if (jpgData != nullptr) {
-                const size_t bytesRead = file.readBytes(reinterpret_cast<char *>(jpgData), fileSize);
-                file.close();
-                if (bytesRead == fileSize) {
-                    tft.fillScreen(TFT_BLACK);
-                    TJpgDec.drawJpg(0, 0, jpgData, fileSize);
-                }
-                free(jpgData);
-            }
-        }
-    }
-}
+void ImageScreen::draw(lv_obj_t* screen) {
+    _screen = screen;
+    lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_PART_MAIN);
 
-void ImageScreen::update(TFT_eSPI& tft) {
-    // No update needed for image screen
+    lv_obj_t* img = lv_img_create(_screen);
+    String path = "S:" + filename;
+    lv_img_set_src(img, path.c_str());
+    lv_obj_center(img);
 }

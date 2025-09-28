@@ -1,18 +1,26 @@
 #ifndef CLOCKSCREEN_H
 #define CLOCKSCREEN_H
 
-#include "Screen.h"
+#include "services/display/Screen.h"
+#include <Arduino.h>
 
 class ClockScreen final : public Screen {
 public:
-    void draw(TFT_eSPI& tft) override;
-    void update(TFT_eSPI& tft) override;
+    void draw(lv_obj_t* screen) override;
+    void update() override;
 
 private:
-    void showWeatherIconJPG(TFT_eSPI& tft, const String& iconCode);
+    void showWeatherIcon(const String& iconCode);
+
+    lv_obj_t* time_label;
+    lv_obj_t* date_label;
+    lv_obj_t* temp_label;
+    lv_obj_t* humidity_label;
+    lv_obj_t* temp_min_label;
+    lv_obj_t* temp_max_label;
+    lv_obj_t* weather_icon;
+
     String lastDrawnWeatherIcon = "";
-    String lastDate = "";
-    unsigned long lastClockUpdate = 0;
 };
 
 #endif //CLOCKSCREEN_H

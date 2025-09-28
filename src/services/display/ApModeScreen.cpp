@@ -1,27 +1,25 @@
 #include "ApModeScreen.h"
-
 #include <WiFi.h>
-
 #include "Config.h"
 
-void ApModeScreen::draw(TFT_eSPI& tft) {
-    tft.fillScreen(TFT_BLACK);
-    tft.setTextColor(TFT_YELLOW, TFT_BLACK);
-    tft.setTextSize(2);
-    tft.setCursor(10, 30);
-    tft.println("WiFi not connected");
-    tft.setTextSize(3);
-    tft.setCursor(20, 60);
-    tft.println("**AP MODE**");
-    tft.setTextSize(2);
-    tft.setCursor(10, 110);
-    tft.println("SSID: " + String(DEFAULT_SSID));
-    tft.setCursor(10, 140);
-    tft.println("PWD: " + String(DEFAULT_PASSWORD));
-    tft.setCursor(10, 170);
-    tft.println("IP: " + WiFi.softAPIP().toString());
-}
+void ApModeScreen::draw(lv_obj_t* screen) {
+    _screen = screen;
+    lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_PART_MAIN);
 
-void ApModeScreen::update(TFT_eSPI& tft) {
-    // No update needed for error screen
+    lv_obj_t* title_label = lv_label_create(_screen);
+    lv_label_set_text(title_label, "AP MODE");
+    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_24, 0);
+    lv_obj_align(title_label, LV_ALIGN_TOP_MID, 0, 10);
+
+    lv_obj_t* ssid_label = lv_label_create(_screen);
+    lv_label_set_text_fmt(ssid_label, "SSID: %s", DEFAULT_SSID);
+    lv_obj_align(ssid_label, LV_ALIGN_CENTER, 0, -20);
+
+    lv_obj_t* pwd_label = lv_label_create(_screen);
+    lv_label_set_text_fmt(pwd_label, "Password: %s", DEFAULT_PASSWORD);
+    lv_obj_align(pwd_label, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t* ip_label = lv_label_create(_screen);
+    lv_label_set_text_fmt(ip_label, "IP: %s", WiFi.softAPIP().toString().c_str());
+    lv_obj_align(ip_label, LV_ALIGN_CENTER, 0, 20);
 }

@@ -1,15 +1,13 @@
 #ifndef STATUSSCREEN_H
 #define STATUSSCREEN_H
 
-#include "Screen.h"
+#include "services/display/Screen.h"
+#include <Arduino.h>
 
 class StatusScreen final : public Screen {
 public:
-    StatusScreen(const String& message, unsigned long timeout);
-
-    void draw(TFT_eSPI& tft) override;
-    void update(TFT_eSPI& tft) override;
-
+    StatusScreen(const String& message, unsigned long duration);
+    void draw(lv_obj_t* screen) override;
     bool isExpired() const;
 
 private:
