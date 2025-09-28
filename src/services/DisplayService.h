@@ -1,14 +1,15 @@
 #ifndef DISPLAYSERVICE_H
 #define DISPLAYSERVICE_H
 
-#include "Task.h"
-#include "utils/Macros.h"
 #include <lvgl.h>
-#include "hardware/Button.h"
-#include "hardware/Backlight.h"
-#include <vector>
 #include <memory>
+#include <vector>
+
+#include "Task.h"
+#include "hardware/Backlight.h"
+#include "hardware/Button.h"
 #include "services/display/Screen.h"
+#include "utils/Macros.h"
 
 #define DISP_PANIC(msg) DisplayService::instance().panic(msg, __func__, __LINE__, __FILE__);
 
@@ -16,7 +17,7 @@ class DisplayService final : public Task {
     SINGLETON(DisplayService)
 
 public:
-    void panic(const char* msg, const char* func, int line, const char* file);
+    [[noreturn]] void panic(const char* msg, const char* func, int line, const char* file);
     void setScreen(std::unique_ptr<Screen> newScreen, unsigned long timeoutSec = 0);
     void showOverlay(const String& message, unsigned long duration);
 

@@ -2,11 +2,10 @@
 #define LVGLTASK_H
 
 #include "services/Task.h"
+#include "utils/Macros.h"
 
 class LvglTask final : public Task {
-public:
-    LvglTask();
-
+    SINGLETON(LvglTask)
 protected:
     [[noreturn]] void run() override;
 };

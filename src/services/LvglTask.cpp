@@ -1,11 +1,11 @@
 #include "LvglTask.h"
 #include <lvgl.h>
 
-LvglTask::LvglTask() : Task("LvglTask", 8192, 1) {}
+LvglTask::LvglTask() : Task("LvglTask", 8192, 2) {}
 
 [[noreturn]] void LvglTask::run() {
     for (;;) {
-        lv_timer_handler();
-        vTaskDelay(5 / portTICK_PERIOD_MS);
+        // TODO remove?
+        vTaskDelay(lv_timer_handler() / portTICK_PERIOD_MS);
     }
 }

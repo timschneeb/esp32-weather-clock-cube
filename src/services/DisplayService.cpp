@@ -20,7 +20,7 @@
 #include "services/display/ImageScreen.h"
 #include "services/display/ApModeScreen.h"
 
-static TFT_eSPI tft = TFT_eSPI();
+static auto tft = TFT_eSPI();
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
     uint32_t w = (area->x2 - area->x1 + 1);
@@ -34,22 +34,9 @@ static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t 
     lv_disp_flush_ready(disp_drv);
 }
 
-static void touch_cb(lv_indev_drv_t *indev_drv, lv_indev_data_t *data) {
-    uint16_t touchX, touchY;
-    bool touched = tft.getTouch(&touchX, &touchY, TOUCH_THRESHOLD);
-
-    if (!touched) {
-        data->state = LV_INDEV_STATE_REL;
-    } else {
-        data->state = LV_INDEV_STATE_PR;
-        data->point.x = touchX;
-        data->point.y = touchY;
-    }
-}
-
 DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
-void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
+[[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     backlight.wake();
     backlight.setBrightness(255);
     
@@ -174,17 +161,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     disp_drv.draw_buf = &draw_buf;
     lv_disp_drv_register(&disp_drv);
 
-    // Touch input not present on this hardware; do not register a touch driver to avoid
-    // TFT_eSPI attempting to access a non-existent touch controller (causes gpio_set_level errors).
-    // If you add a touch controller, re-enable the code below and configure pins in User_Setup.h.
-    // static lv_indev_drv_t indev_drv;
-    // lv_indev_drv_init(&indev_drv);
-    // indev_drv.type = LV_INDEV_TYPE_POINTER;
-    // indev_drv.read_cb = touch_cb;
-    // lv_indev_drv_register(&indev_drv);
-
     // Process LVGL in this task to keep LVGL single-threaded
-
     const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));
     EventBus &eventBus = EventBus::instance();
     eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
@@ -252,7 +229,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
         }
 
         // Let LVGL process timers and rendering
-        lv_timer_handler();
+       lv_timer_handler();
 
         button.tick();
         vTaskDelay(5 / portTICK_PERIOD_MS);

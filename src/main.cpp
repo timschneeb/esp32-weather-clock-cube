@@ -12,6 +12,7 @@
 #include "services/WeatherService.h"
 #include "services/WebService.h"
 #include "services/DisplayService.h"
+#include "services/LvglTask.h"
 
 void setup() {
     Serial.begin(115200);
@@ -32,6 +33,7 @@ void setup() {
     configTime(0, 0, SNTP_SERVER);
 
     DisplayService::instance().start();
+    LvglTask::instance().start();
     NetworkService::instance().start();
     WeatherService::instance().start();
     WebService::instance().start();
