@@ -47,7 +47,7 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, cons
     }
 
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-        Serial.println("[EventBus] Publishing event ID " + String(static_cast<int>(event->id())) + " " + (urgent ? "(urgent)" : ""));
+        Serial.println("[EventBus] Publishing event ID " + String(named_enum::name(event->id())) + " " + (urgent ? "(urgent)" : ""));
         for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
@@ -63,8 +63,8 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, cons
                 if (result == errQUEUE_FULL) {
                     Serial.println("[EventBus]\tQueue full, event dropped for subscriber " + String(i));
                     DISP_PANIC(String(
-                        "Queue full\n"
-                        "Event " + String(static_cast<int>(event->id())) + " dropped\n"
+                        "Queue full\n" +
+                        String(named_enum::name(event->id())) + " dropped\n"
                         "Subscriber " + String(i) + "\n"
                         "Wait count: " + String(uxQueueMessagesWaiting(sub.queue))
                         ).c_str());

@@ -5,19 +5,20 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#include <Arduino.h>      // For String
-#include <type_traits>    // For std::is_base_of
+#include <Arduino.h>
+#include <type_traits>
 
-#include "utils/EventMacros.h"
 #include "AsyncMqttClient/DisconnectReasons.hpp"
+#include "utils/NamedEnum.h"
+#include "utils/EventMacros.h"
 
-enum class EventId {
-    // NetworkService
+MAKE_NAMED_ENUM_CLASS(EventId,
+    /* NetworkService */
     NET_Connecting,
     NET_StaConnected,
     NET_ApCreated,
 
-    // WebServer
+    /* WebServer */
     API_KeepAlive,
     API_ShowImageFromUrl,
     WEB_MqttDisconnected,
@@ -25,14 +26,13 @@ enum class EventId {
     WEB_ShowImageFromUrlWithZone,
     WEB_ShowLocalImage,
 
-    // WeatherService
+    /* WeatherService */
     WEA_ForecastUpdated,
 
-    // Settings
+    /* Settings */
     CFG_Updated,
-    CFG_WeatherUpdated,
-};
-
+    CFG_WeatherUpdated
+);
 
 class IEvent {
 public:
@@ -45,9 +45,7 @@ public:
     }
 
 protected:
-    explicit IEvent(const EventId id) {
-        _id = id;
-    }
+    explicit IEvent(const EventId id) : _id(id) {}
 
 private:
     EventId _id;
