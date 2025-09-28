@@ -19,6 +19,33 @@
 
 #include <stdint.h>
 
+/*=================
+ * OPERATING SYSTEM
+ *=================*/
+/** Select operating system to use. Possible options:
+ * - LV_OS_NONE
+ * - LV_OS_PTHREAD
+ * - LV_OS_FREERTOS
+ * - LV_OS_CMSIS_RTOS2
+ * - LV_OS_RTTHREAD
+ * - LV_OS_WINDOWS
+ * - LV_OS_MQX
+ * - LV_OS_SDL2
+ * - LV_OS_CUSTOM */
+#define LV_USE_OS   LV_OS_FREERTOS
+
+#if LV_USE_OS == LV_OS_CUSTOM
+    #define LV_OS_CUSTOM_INCLUDE <stdint.h>
+#endif
+#if LV_USE_OS == LV_OS_FREERTOS
+    /*
+     * Unblocking an RTOS task with a direct notification is 45% faster and uses less RAM
+     * than unblocking a task using an intermediary object such as a binary semaphore.
+     * RTOS task notifications can only be used when there is only one task that can be the recipient of the event.
+     */
+    #define LV_USE_FREERTOS_TASK_NOTIFY 1
+#endif
+
 /*====================
    COLOR SETTINGS
  *====================*/
@@ -87,8 +114,8 @@
  *It removes the need to manually update the tick with `lv_tick_inc()`)*/
 #define LV_TICK_CUSTOM 1
 #if LV_TICK_CUSTOM
-    #define LV_TICK_CUSTOM_INCLUDE "Arduino.h"         /*Header for the system time function*/
-    #define LV_TICK_CUSTOM_SYS_TIME_EXPR (millis())    /*Expression evaluating to current system time in ms*/
+    #define LV_TICK_CUSTOM_INCLUDE <freertos/FreeRTOS.h>         /*Header for the system time function*/
+    #define LV_TICK_CUSTOM_SYS_TIME_EXPR (xTaskGetTickCount() / portTICK_PERIOD_MS)    /*Expression evaluating to current system time in ms*/
     /*If using lvgl as ESP32 component*/
     // #define LV_TICK_CUSTOM_INCLUDE "esp_timer.h"
     // #define LV_TICK_CUSTOM_SYS_TIME_EXPR ((esp_timer_get_time() / 1000LL))
@@ -230,7 +257,7 @@
  *-----------*/
 
 /*Enable the log module*/
-#define LV_USE_LOG 0
+#define LV_USE_LOG 1
 #if LV_USE_LOG
 
     /*How important log should be added:
@@ -266,7 +293,7 @@
  *If LV_USE_LOG is enabled an error message will be printed on failure*/
 #define LV_USE_ASSERT_NULL          1   /*Check if the parameter is NULL. (Very fast, recommended)*/
 #define LV_USE_ASSERT_MALLOC        1   /*Checks is the memory is successfully allocated or no. (Very fast, recommended)*/
-#define LV_USE_ASSERT_STYLE         0   /*Check if the styles are properly initialized. (Very fast, recommended)*/
+#define LV_USE_ASSERT_STYLE         1   /*Check if the styles are properly initialized. (Very fast, recommended)*/
 #define LV_USE_ASSERT_MEM_INTEGRITY 0   /*Check the integrity of `lv_mem` after critical operations. (Slow)*/
 #define LV_USE_ASSERT_OBJ           0   /*Check the object's type and existence (e.g. not deleted). (Slow)*/
 

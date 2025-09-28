@@ -23,18 +23,19 @@
 static auto tft = TFT_eSPI();
 
 static void flush_cb(lv_disp_drv_t *disp_drv, const lv_area_t *area, lv_color_t *color_p) {
-    uint32_t w = (area->x2 - area->x1 + 1);
-    uint32_t h = (area->y2 - area->y1 + 1);
+    const uint32_t w = (area->x2 - area->x1 + 1);
+    const uint32_t h = (area->y2 - area->y1 + 1);
 
-    // Use pushImage with byte-swapping enabled to match LVGL's color format
     tft.startWrite();
-    tft.pushImage(area->x1, area->y1, w, h, (uint16_t *)color_p);
+    tft.setAddrWindow(area->x1, area->y1, w, h);
+    tft.pushColors(reinterpret_cast<uint16_t *>(color_p), w * h, true);
     tft.endWrite();
 
-    lv_disp_flush_ready(disp_drv);
+    tft.endWrite();
 }
 
-DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
+DisplayService::DisplayService() : Task("DisplayService", 12288, 2), disp_drv(), draw_buf(),
+                                   buf1(nullptr), buf2(nullptr) {}
 
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     backlight.wake();
@@ -43,14 +44,14 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     lv_obj_clean(lv_scr_act());
     lv_obj_t* scr = lv_scr_act();
     lv_obj_set_style_bg_color(scr, lv_color_hex(0xff0000), LV_PART_MAIN);
-    
+
     lv_obj_t* label = lv_label_create(scr);
     lv_label_set_text(label, "PANIC");
     lv_obj_set_style_text_color(label, lv_color_hex(0xffffff), LV_PART_MAIN);
     lv_obj_align(label, LV_ALIGN_TOP_MID, 0, 10);
 
     lv_obj_t* msg_label = lv_label_create(scr);
-    lv_label_set_text_fmt(msg_label, "%s\n%s+%d\n%s", msg, func, line, file);
+    lv_label_set_text_fmt(msg_label, "%s\n\n%s+%d\n%s", msg, func, line, file);
     lv_obj_set_style_text_color(msg_label, lv_color_hex(0xffffff), LV_PART_MAIN);
     lv_obj_align(msg_label, LV_ALIGN_CENTER, 0, 0);
 
@@ -73,7 +74,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
 
     lv_timer_t* timer = lv_timer_create([](lv_timer_t* timer) {
-        lv_obj_del_async((lv_obj_t*)timer->user_data);
+        lv_obj_del_async(static_cast<lv_obj_t *>(timer->user_data));
     }, duration, label);
     lv_timer_set_repeat_count(timer, 1);
 }
@@ -149,9 +150,9 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
 
     lv_init();
 
-    const uint32_t buf_pixels = 240 * 10; // 10 lines buffer
-    buf1 = (lv_color_t *) heap_caps_malloc(buf_pixels * sizeof(lv_color_t), MALLOC_CAP_DMA);
-    buf2 = (lv_color_t *) heap_caps_malloc(buf_pixels * sizeof(lv_color_t), MALLOC_CAP_DMA);
+    constexpr uint32_t buf_pixels = 240 * 10; // 10 lines buffer
+    buf1 = static_cast<lv_color_t *>(heap_caps_malloc(buf_pixels * sizeof(lv_color_t), MALLOC_CAP_DMA));
+    buf2 = static_cast<lv_color_t *>(heap_caps_malloc(buf_pixels * sizeof(lv_color_t), MALLOC_CAP_DMA));
     lv_disp_draw_buf_init(&draw_buf, buf1, buf2, buf_pixels);
 
     lv_disp_drv_init(&disp_drv);
@@ -178,8 +179,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
 
     for (;;) {
-        EventPtr event = EventBus::tryReceive(displayEventQueue);
-        if (event != nullptr) {
+        if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
             switch (event->id()) {
                 case EventId::NET_ApCreated:
                     setScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
@@ -229,7 +229,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
         }
 
         // Let LVGL process timers and rendering
-       lv_timer_handler();
+        lv_timer_handler();
 
         button.tick();
         vTaskDelay(5 / portTICK_PERIOD_MS);

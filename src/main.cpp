@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <esp_sntp.h>
+#include <lvgl.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
 
@@ -8,14 +9,20 @@
 
 #include "Config.h"
 #include "Settings.h"
+#include "services/DisplayService.h"
+#include "services/LvglTask.h"
 #include "services/NetworkService.h"
 #include "services/WeatherService.h"
 #include "services/WebService.h"
-#include "services/DisplayService.h"
-#include "services/LvglTask.h"
+
+static void lv_log_print_g_cb(const char *buf)
+{
+    Serial.write(buf);
+}
 
 void setup() {
     Serial.begin(115200);
+    lv_log_register_print_cb(lv_log_print_g_cb);
 
     if (!SPIFFS.begin(true)) {
         Serial.println("Failed to mount SPIFFS! Did you forget to flash the filesystem?");
