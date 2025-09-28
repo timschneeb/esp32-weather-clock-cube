@@ -47,7 +47,7 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, cons
     }
 
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-        Serial.println("[EventBus] Publishing event ID " + String(named_enum::name(event->id())) + " " + (urgent ? "(urgent)" : ""));
+        Serial.println("[EventBus] Publishing " + String(named_enum::name(event->id())) + " " + (urgent ? "(urgent)" : ""));
         for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
