@@ -1,6 +1,5 @@
 #include <Arduino.h>
 #include <esp_sntp.h>
-#include <lvgl.h>
 #include <SPIFFS.h>
 #include <WiFi.h>
 

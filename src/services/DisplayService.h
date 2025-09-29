@@ -9,7 +9,7 @@
 #include "hardware/Button.h"
 #include "hardware/TFT.h"
 #include "lvgl/LvglDisplayAdapter.h"
-#include "screens/display/Screen.h"
+#include "../screens/Screen.h"
 #include "utils/Macros.h"
 
 #define DISP_PANIC(msg) DisplayService::instance().panic(msg, __func__, __LINE__, __FILE__);
@@ -26,7 +26,6 @@ protected:
     [[noreturn]] void run() override;
 
 private:
-    static void deleteObjectOnTimer(lv_timer_t* timer);
     void displayImageFromAPI(const String &url, const String &zone);
 
     Button button;

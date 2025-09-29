@@ -15,11 +15,11 @@
 #include "misc/lv_timer.h"
 #include "lvgl/LvglDisplayAdapter.h"
 #include "services/NetworkService.h"
-#include "screens/display/ApModeScreen.h"
-#include "screens/display/ClockScreen.h"
-#include "screens/display/ErrorScreen.h"
-#include "screens/display/ImageScreen.h"
-#include "screens/display/Screen.h"
+#include "../screens/ApModeScreen.h"
+#include "../screens/ClockScreen.h"
+#include "../screens/ErrorScreen.h"
+#include "../screens/ImageScreen.h"
+#include "../screens/Screen.h"
 
 DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
@@ -52,13 +52,10 @@ void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsig
 }
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
-    return; // TODO deletion causes crash
-
     lv_obj_t* label = lv_label_create(lv_layer_top());
     lv_label_set_text(label, message.c_str());
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
-
-    lv_timer_create(deleteObjectOnTimer, duration, label);
+    lv_obj_delete_delayed(label, duration);
 }
 
 [[noreturn]] void DisplayService::run() {
@@ -146,10 +143,6 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
         button.tick();
         vTaskDelay(5 / portTICK_PERIOD_MS);
     }
-}
-
-void DisplayService::deleteObjectOnTimer(lv_timer_t* timer) {
-    lv_obj_del_async(static_cast<lv_obj_t *>(lv_timer_get_user_data(timer)));
 }
 
 void DisplayService::displayImageFromAPI(const String &url, const String &zone) {
