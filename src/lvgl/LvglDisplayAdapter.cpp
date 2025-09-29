@@ -2,16 +2,19 @@
 
 #include <lvgl.h>
 
-#include "DisplayService.h"
+#include "LvSPIFFS.h"
+#include "services/DisplayService.h"
 
-LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {
-}
+static OnFlushCallback onFlushCallback;
+
+LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {}
 
 void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     lv_log_register_print_cb(onLog);
 
     lv_init();
     lv_tick_set_cb(getTicks);
+    lv_fs_spiffs_init();
     display = lv_display_create(width, height);
     lv_display_set_flush_cb(display, onFlush);
 

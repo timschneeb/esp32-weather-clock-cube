@@ -8,7 +8,7 @@
 #include "hardware/Backlight.h"
 #include "hardware/Button.h"
 #include "hardware/TFT.h"
-#include "services/LvglDisplayAdapter.h"
+#include "lvgl/LvglDisplayAdapter.h"
 #include "services/display/Screen.h"
 #include "utils/Macros.h"
 
@@ -19,7 +19,7 @@ class DisplayService final : public Task {
 
 public:
     [[noreturn]] void panic(const char* msg, const char* func, int line, const char* file);
-    void setScreen(std::unique_ptr<Screen> newScreen, unsigned long timeoutSec = 0);
+    void changeScreen(std::unique_ptr<Screen> newScreen, unsigned long timeoutSec = 0);
     void showOverlay(const String& message, unsigned long duration);
 
 protected:

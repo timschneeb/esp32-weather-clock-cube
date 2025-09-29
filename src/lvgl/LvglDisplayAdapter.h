@@ -18,8 +18,6 @@ public:
     static void setOnFlushCallback(const OnFlushCallback& callback);
     static void tick();
 private:
-    static OnFlushCallback onFlushCallback;
-
     lv_display_t* display;
     uint16_t *drawBuf1;
     uint16_t *drawBuf2;

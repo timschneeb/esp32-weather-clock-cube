@@ -1,0 +1,10 @@
+//
+// Created by tim on 29.09.25.
+//
+
+#ifndef GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_LVSPIFFS_H
+#define GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_LVSPIFFS_H
+
+void lv_fs_spiffs_init();
+
+#endif //GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_LVSPIFFS_H

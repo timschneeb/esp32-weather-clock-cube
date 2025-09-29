@@ -13,8 +13,8 @@
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "misc/lv_timer.h"
+#include "lvgl/LvglDisplayAdapter.h"
 #include "services/NetworkService.h"
-#include "services/LvglDisplayAdapter.h"
 #include "services/display/ApModeScreen.h"
 #include "services/display/ClockScreen.h"
 #include "services/display/ErrorScreen.h"
@@ -37,18 +37,22 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     }
 }
 
-void DisplayService::setScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
-    // TODO timeout ignored
+void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
     currentScreen = std::move(newScreen);
     lv_obj_t* scr = lv_obj_create(nullptr);
+    lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
+    lv_obj_set_style_max_height(scr, 240, LV_STATE_ANY);
+    lv_obj_set_style_max_width(scr, 240, LV_STATE_ANY);
     currentScreen->draw(scr);
-    lv_scr_load(scr);
+    lv_screen_load(scr);
 
     screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
     screenSince = millis();
 }
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
+    return; // TODO deletion causes crash
+
     lv_obj_t* label = lv_label_create(lv_layer_top());
     lv_label_set_text(label, message.c_str());
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
@@ -80,13 +84,13 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
     eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
 
-    setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+    changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
 
     for (;;) {
         if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
             switch (event->id()) {
                 case EventId::NET_ApCreated:
-                    setScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
+                    changeScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
                     break;
                 case EventId::NET_StaConnected:
                     showOverlay("WiFi connected", 3000);
@@ -105,12 +109,12 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                 case EventId::WEB_MqttDisconnected: {
                     const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
                     if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
-                        setScreen(std::unique_ptr<Screen>(new ErrorScreen("MQTT Disconnected")), 50);
+                        changeScreen(std::unique_ptr<Screen>(new ErrorScreen("MQTT Disconnected")), 50);
                     }
                     break;
                 }
                 case EventId::WEB_MqttError:
-                    setScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
+                    changeScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
                     break;
                 case EventId::CFG_Updated:
                 case EventId::CFG_WeatherUpdated:
@@ -123,7 +127,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
 
         if (currentScreen) {
             if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
-                setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+                changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
                 screenTimeout = 0;
             }
         }
@@ -173,7 +177,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
         if (const int httpCode = http.GET(); httpCode == 200) {
             const uint32_t len = http.getSize();
             if (len > MAX_FILE_SIZE) {
-                setScreen(std::unique_ptr<Screen>(new ErrorScreen("Image too large")), 5);
+                changeScreen(std::unique_ptr<Screen>(new ErrorScreen("Image too large")), 5);
                 http.end();
                 return;
             }
@@ -184,7 +188,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
                 file.close();
                 if (written == len) {
                     success = true;
-                    setScreen(std::unique_ptr<Screen>(new ImageScreen(filename)), Settings::instance().displayDuration);
+                    changeScreen(std::unique_ptr<Screen>(new ImageScreen(filename)), Settings::instance().displayDuration);
                 }
             }
             http.end();
@@ -197,6 +201,6 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     }
 
     if (!success) {
-        setScreen(std::unique_ptr<Screen>(new ErrorScreen("Loading failed: " + lastErrorReason)), 5);
+        changeScreen(std::unique_ptr<Screen>(new ErrorScreen("Loading failed: " + lastErrorReason)), 5);
     }
 }
