@@ -53,7 +53,13 @@ void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsig
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
     lv_obj_t* label = lv_label_create(lv_layer_top());
+    lv_obj_set_style_pad_all(label, 0, 0);
+    lv_obj_set_style_margin_hor(label, 8, 0);
     lv_label_set_text(label, message.c_str());
+    lv_label_set_long_mode(label, LV_LABEL_LONG_MODE_WRAP);
+    lv_obj_set_style_bg_opa(label, LV_OPA_COVER, 0);
+    lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_set_style_bg_color(label, lv_color_hex(0x444444), 0);
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
     lv_obj_delete_delayed(label, duration);
 }

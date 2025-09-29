@@ -141,7 +141,7 @@ void ClockScreen::draw(lv_obj_t *screen) {
 
     lv_obj_t *row_0 = row_create(column_0);
     lv_obj_set_width(row_0, lv_pct(100));
-    lv_obj_set_height(row_0, 40);
+    lv_obj_set_height(row_0, 32);
     lv_obj_set_flex_flow(row_0, LV_FLEX_FLOW_ROW);
     lv_obj_set_flag(row_0, LV_OBJ_FLAG_SCROLLABLE, false);
 
@@ -157,18 +157,18 @@ void ClockScreen::draw(lv_obj_t *screen) {
     
     lv_obj_t *row_1 = row_create(column_0);
     lv_obj_set_width(row_1, lv_pct(100));
-    lv_obj_set_height(row_1, 90);
+    lv_obj_set_height(row_1, 80);
     lv_obj_set_flex_flow(row_1, LV_FLEX_FLOW_ROW);
     lv_obj_set_style_pad_row(row_1, 0, 0);
     lv_obj_set_style_pad_column(row_1, 0, 0);
     lv_obj_set_flag(row_1, LV_OBJ_FLAG_SCROLLABLE, false);
 
     lv_obj_t *column_1 = column_create(row_1);
-    lv_obj_set_width(column_1, 122);
-    lv_obj_set_height(column_1, 68);
+    lv_obj_set_width(column_1, 132);
+    lv_obj_set_height(column_1, 60);
     lv_obj_set_style_margin_top(column_1, 11, 0);
     lv_obj_set_flex_flow(column_1, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_pad_row(column_1, 18, 0);
+    lv_obj_set_style_pad_row(column_1, 8, 0);
     lv_obj_set_flag(column_1, LV_OBJ_FLAG_SCROLLABLE, false);
     lv_obj_set_style_pad_all(column_1, 0, 0);
 
@@ -192,6 +192,7 @@ void ClockScreen::draw(lv_obj_t *screen) {
     weather_icon = lv_image_create(row_1);
     lv_obj_set_size(weather_icon, 90, 90);
     lv_obj_set_align(weather_icon, LV_ALIGN_BOTTOM_RIGHT);
+    lv_obj_set_style_pad_bottom(weather_icon, 20, 0);
 
     update();
 }
