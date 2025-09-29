@@ -9,7 +9,7 @@ public:
     virtual void draw(lv_obj_t* screen) = 0;
     virtual void update() {};
 protected:
-    lv_obj_t* _screen;
+    lv_obj_t *_screen = nullptr;
 };
 
 #endif //SCREEN_H

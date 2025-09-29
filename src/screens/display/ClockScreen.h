@@ -1,7 +1,7 @@
 #ifndef CLOCKSCREEN_H
 #define CLOCKSCREEN_H
 
-#include "services/display/Screen.h"
+#include "Screen.h"
 #include <Arduino.h>
 
 class ClockScreen final : public Screen {
@@ -12,13 +12,13 @@ public:
 private:
     void showWeatherIcon(const String& iconCode);
 
-    lv_obj_t* time_label;
-    lv_obj_t* date_label;
-    lv_obj_t* temp_label;
-    lv_obj_t* humidity_label;
-    lv_obj_t* temp_min_label;
-    lv_obj_t* temp_max_label;
-    lv_obj_t* weather_icon;
+    lv_obj_t *time_label = nullptr;
+    lv_obj_t *date_label = nullptr;
+    lv_obj_t *temp_label = nullptr;
+    lv_obj_t *humidity_label = nullptr;
+    lv_obj_t *temp_min_label = nullptr;
+    lv_obj_t *temp_max_label = nullptr;
+    lv_obj_t *weather_icon = nullptr;
 
     String lastDrawnWeatherIcon = "";
 };

@@ -1,12 +1,12 @@
 #ifndef IMAGESCREEN_H
 #define IMAGESCREEN_H
 
-#include "services/display/Screen.h"
+#include "Screen.h"
 #include <Arduino.h>
 
 class ImageScreen final : public Screen {
 public:
-    ImageScreen(const String& filename);
+    explicit ImageScreen(const String& filename);
     void draw(lv_obj_t* screen) override;
 
 private:

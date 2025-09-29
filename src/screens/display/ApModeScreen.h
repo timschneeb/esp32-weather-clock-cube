@@ -1,7 +1,7 @@
 #ifndef APMODESCREEN_H
 #define APMODESCREEN_H
 
-#include "services/display/Screen.h"
+#include "Screen.h"
 
 class ApModeScreen final : public Screen {
 public:

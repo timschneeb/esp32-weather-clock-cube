@@ -1,7 +1,7 @@
 #ifndef STATUSSCREEN_H
 #define STATUSSCREEN_H
 
-#include "services/display/Screen.h"
+#include "Screen.h"
 #include <Arduino.h>
 
 class StatusScreen final : public Screen {

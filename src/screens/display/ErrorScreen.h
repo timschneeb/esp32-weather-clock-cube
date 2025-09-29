@@ -1,12 +1,12 @@
 #ifndef ERRORSCREEN_H
 #define ERRORSCREEN_H
 
-#include "services/display/Screen.h"
+#include "Screen.h"
 #include <Arduino.h>
 
 class ErrorScreen final : public Screen {
 public:
-    ErrorScreen(const String& message);
+    explicit ErrorScreen(const String& message);
     void draw(lv_obj_t* screen) override;
 
 private:
