@@ -14,14 +14,8 @@
 #include "services/WeatherService.h"
 #include "services/WebService.h"
 
-static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
-{
-    Serial.write(buf);
-}
-
 void setup() {
     Serial.begin(115200);
-    lv_log_register_print_cb(lv_log_print_g_cb);
 
     if (!SPIFFS.begin(true)) {
         Serial.println("Failed to mount SPIFFS! Did you forget to flash the filesystem?");

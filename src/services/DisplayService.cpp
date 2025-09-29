@@ -14,25 +14,14 @@
 #include "event/Events.h"
 #include "misc/lv_timer.h"
 #include "services/NetworkService.h"
+#include "services/LvglDisplayAdapter.h"
 #include "services/display/ApModeScreen.h"
 #include "services/display/ClockScreen.h"
 #include "services/display/ErrorScreen.h"
 #include "services/display/ImageScreen.h"
 #include "services/display/Screen.h"
 
-static void lvglFlushToDisplay(lv_display_t * disp, const lv_area_t * area, uint8_t * data) {
-    const uint32_t w = area->x2 - area->x1 + 1;
-    const uint32_t h = area->y2 - area->y1 + 1;
-    DisplayService::instance().pushToDisplay(reinterpret_cast<uint16_t *>(data), area->x1, area->y1, w, h);
-    lv_display_flush_ready(disp);
-}
-
-static uint32_t lvglGetTicks() {
-    return xTaskGetTickCount() / portTICK_PERIOD_MS;
-}
-
-DisplayService::DisplayService() : Task("DisplayService", 12288, 2),
-                                   disp(nullptr), drawBuffer(), drawBuf1(nullptr), drawBuf2(nullptr) {}
+DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     Serial.println(msg);
@@ -54,6 +43,9 @@ void DisplayService::setScreen(std::unique_ptr<Screen> newScreen, const unsigned
     lv_obj_t* scr = lv_obj_create(nullptr);
     currentScreen->draw(scr);
     lv_scr_load(scr);
+
+    screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
+    screenSince = millis();
 }
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
@@ -64,12 +56,95 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     lv_timer_create(deleteObjectOnTimer, duration, label);
 }
 
-void DisplayService::deleteObjectOnTimer(lv_timer_t* timer) {
-    lv_obj_del_async(static_cast<lv_obj_t *>(lv_timer_get_user_data(timer)));
+[[noreturn]] void DisplayService::run() {
+    button.begin();
+    button.attachClick([this] {
+        backlight.handlePowerButton();
+        lastKeepaliveTime = 0;
+    });
+
+    lvglAdapter.init(240, 240);
+    lvglAdapter.setOnFlushCallback(std::bind(&TFT::push, tft, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    backlight.setBrightness(Settings::instance().brightness);
+
+    const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));
+    EventBus &eventBus = EventBus::instance();
+    eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
+    eventBus.subscribe(EventId::NET_ApCreated, displayEventQueue);
+    eventBus.subscribe(EventId::API_KeepAlive, displayEventQueue);
+    eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_ShowImageFromUrlWithZone, displayEventQueue);
+    eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
+    eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
+    eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
+
+    setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+
+    for (;;) {
+        if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
+            switch (event->id()) {
+                case EventId::NET_ApCreated:
+                    setScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
+                    break;
+                case EventId::NET_StaConnected:
+                    showOverlay("WiFi connected", 3000);
+                case EventId::API_KeepAlive:
+                    if (!backlight.isSleepingByPowerButton()) {
+                        backlight.wake();
+                    }
+                    lastKeepaliveTime = millis();
+                    break;
+                case EventId::API_ShowImageFromUrl:
+                    displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url(), "");
+                    break;
+                case EventId::WEB_ShowImageFromUrlWithZone:
+                    displayImageFromAPI(event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url(), event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone());
+                    break;
+                case EventId::WEB_MqttDisconnected: {
+                    const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
+                    if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
+                        setScreen(std::unique_ptr<Screen>(new ErrorScreen("MQTT Disconnected")), 50);
+                    }
+                    break;
+                }
+                case EventId::WEB_MqttError:
+                    setScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
+                    break;
+                case EventId::CFG_Updated:
+                case EventId::CFG_WeatherUpdated:
+                    showOverlay("Data updated", 10000);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (currentScreen) {
+            if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
+                setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+                screenTimeout = 0;
+            }
+        }
+
+        if (currentScreen) {
+            currentScreen->update();
+        }
+
+        if (lastKeepaliveTime > 0 && millis() - lastKeepaliveTime > KEEPALIVE_TIMEOUT) {
+            backlight.sleep();
+            lastKeepaliveTime = 0;
+        }
+
+        lvglAdapter.tick();
+        button.tick();
+        vTaskDelay(5 / portTICK_PERIOD_MS);
+    }
 }
 
-void DisplayService::pushToDisplay(uint16_t *buffer, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
-    tft.push(buffer, x, y, w, h);
+void DisplayService::deleteObjectOnTimer(lv_timer_t* timer) {
+    lv_obj_del_async(static_cast<lv_obj_t *>(lv_timer_get_user_data(timer)));
 }
 
 void DisplayService::displayImageFromAPI(const String &url, const String &zone) {
@@ -123,97 +198,5 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
 
     if (!success) {
         setScreen(std::unique_ptr<Screen>(new ErrorScreen("Loading failed: " + lastErrorReason)), 5);
-    }
-}
-
-[[noreturn]] void DisplayService::run() {
-    button.begin();
-    button.attachClick([this] {
-        backlight.handlePowerButton();
-        lastKeepaliveTime = 0;
-    });
-
-    backlight.setBrightness(Settings::instance().brightness);
-
-    lv_init();
-    lv_tick_set_cb(lvglGetTicks);
-
-    disp = lv_display_create(240, 240);
-    lv_display_set_flush_cb(disp, lvglFlushToDisplay);
-
-    constexpr uint32_t bufferSize = 240 * 10 * sizeof(uint16_t); // 10 lines buffer
-    drawBuf1 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_DMA));
-    drawBuf2 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_DMA));
-    lv_display_set_buffers(disp, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-    // Process LVGL in this task to keep LVGL single-threaded
-    const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));
-    EventBus &eventBus = EventBus::instance();
-    eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
-    eventBus.subscribe(EventId::NET_ApCreated, displayEventQueue);
-    eventBus.subscribe(EventId::API_KeepAlive, displayEventQueue);
-    eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_ShowImageFromUrlWithZone, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
-    eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
-    eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
-
-    setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
-
-    for (;;) {
-        if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
-            switch (event->id()) {
-                case EventId::NET_ApCreated:
-                    setScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
-                    break;
-                case EventId::API_ShowImageFromUrl:
-                    displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url(), "");
-                    break;
-                case EventId::WEB_ShowImageFromUrlWithZone:
-                    displayImageFromAPI(event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url(), event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone());
-                    break;
-                case EventId::WEB_MqttDisconnected: {
-                    const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
-                    if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
-                        setScreen(std::unique_ptr<Screen>(new ErrorScreen("MQTT Disconnected")), 50);
-                    }
-                    break;
-                }
-                case EventId::WEB_MqttError:
-                    setScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
-                    break;
-                case EventId::CFG_Updated:
-                case EventId::CFG_WeatherUpdated:
-                    showOverlay("Data updated", 10000);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        static unsigned long screenTimeout = 0;
-        static unsigned long screenSince = 0; // TODO <- never set
-
-        if (currentScreen) {
-            if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
-                setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
-                screenTimeout = 0;
-            }
-        }
-
-        if (currentScreen) {
-            currentScreen->update();
-        }
-
-        if (lastKeepaliveTime > 0 && millis() - lastKeepaliveTime > KEEPALIVE_TIMEOUT) {
-            backlight.sleep();
-            lastKeepaliveTime = 0;
-        }
-
-        lv_timer_handler();
-        button.tick();
-        vTaskDelay(5 / portTICK_PERIOD_MS);
     }
 }
