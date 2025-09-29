@@ -5,6 +5,6 @@
 #ifndef GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_LVSPIFFS_H
 #define GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_LVSPIFFS_H
 
-void lv_fs_spiffs_init();
+extern "C" void lv_fs_spiffs_init();
 
 #endif //GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_LVSPIFFS_H
