@@ -7,6 +7,7 @@ void StatusScreen::draw(lv_obj_t* screen) {
     // This is an overlay, so we don't clear the screen
     lv_obj_t* label = lv_label_create(lv_layer_top());
     lv_label_set_text(label, message.c_str());
+    lv_label_set_long_mode(label, LV_LABEL_LONG_MODE_WRAP);
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
 }
 

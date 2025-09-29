@@ -12,6 +12,9 @@ void ErrorScreen::draw(lv_obj_t* screen) {
     lv_obj_align(label, LV_ALIGN_TOP_LEFT, 10, 10);
 
     lv_obj_t* msg_label = lv_label_create(_screen);
+    lv_label_set_long_mode(msg_label, LV_LABEL_LONG_MODE_WRAP);
+    lv_obj_set_style_text_color(msg_label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
+    lv_obj_set_width(msg_label, 220);
     lv_label_set_text(msg_label, message.c_str());
     lv_obj_align(msg_label, LV_ALIGN_CENTER, 0, 0);
 }
