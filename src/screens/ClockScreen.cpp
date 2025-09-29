@@ -192,7 +192,7 @@ void ClockScreen::draw(lv_obj_t *screen) {
     weather_icon = lv_image_create(row_1);
     lv_obj_set_size(weather_icon, 90, 90);
     lv_obj_set_align(weather_icon, LV_ALIGN_BOTTOM_RIGHT);
-    lv_obj_set_style_pad_bottom(weather_icon, 20, 0);
+    lv_obj_set_style_margin_top(weather_icon, -3, 0);
 
     update();
 }
