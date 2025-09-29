@@ -15,11 +15,11 @@
 #include "misc/lv_timer.h"
 #include "lvgl/LvglDisplayAdapter.h"
 #include "services/NetworkService.h"
-#include "services/display/ApModeScreen.h"
-#include "services/display/ClockScreen.h"
-#include "services/display/ErrorScreen.h"
-#include "services/display/ImageScreen.h"
-#include "services/display/Screen.h"
+#include "screens/display/ApModeScreen.h"
+#include "screens/display/ClockScreen.h"
+#include "screens/display/ErrorScreen.h"
+#include "screens/display/ImageScreen.h"
+#include "screens/display/Screen.h"
 
 DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
@@ -40,6 +40,7 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
     currentScreen = std::move(newScreen);
     lv_obj_t* scr = lv_obj_create(nullptr);
+    lv_obj_set_flag(scr, LV_OBJ_FLAG_SCROLLABLE, false);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_max_height(scr, 240, LV_STATE_ANY);
     lv_obj_set_style_max_width(scr, 240, LV_STATE_ANY);

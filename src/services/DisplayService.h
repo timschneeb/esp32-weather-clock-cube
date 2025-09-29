@@ -9,7 +9,7 @@
 #include "hardware/Button.h"
 #include "hardware/TFT.h"
 #include "lvgl/LvglDisplayAdapter.h"
-#include "services/display/Screen.h"
+#include "screens/display/Screen.h"
 #include "utils/Macros.h"
 
 #define DISP_PANIC(msg) DisplayService::instance().panic(msg, __func__, __LINE__, __FILE__);

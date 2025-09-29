@@ -10,8 +10,6 @@ public:
     void update() override;
 
 private:
-    void showWeatherIcon(const String& iconCode);
-
     lv_obj_t *time_label = nullptr;
     lv_obj_t *date_label = nullptr;
     lv_obj_t *temp_label = nullptr;
