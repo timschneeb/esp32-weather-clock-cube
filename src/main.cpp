@@ -8,6 +8,7 @@
 
 #include "Config.h"
 #include "Settings.h"
+#include "services/DebugService.h"
 #include "services/DisplayService.h"
 #include "services/NetworkService.h"
 #include "services/WeatherService.h"
@@ -36,6 +37,7 @@ void setup() {
     });
     configTime(0, 0, SNTP_SERVER);
 
+    DebugService::instance().start();
     DisplayService::instance().start();
     NetworkService::instance().start();
     WeatherService::instance().start();
