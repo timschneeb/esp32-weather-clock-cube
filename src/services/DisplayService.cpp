@@ -20,29 +20,19 @@
 #include "services/display/ImageScreen.h"
 #include "services/display/Screen.h"
 
-#include <esp_task_wdt.h>
-
-static auto tft = TFT_eSPI();
-
-static void flush_cb(lv_display_t * disp, const lv_area_t * area, uint8_t * color_p) {
-    const uint32_t w = (area->x2 - area->x1 + 1);
-    const uint32_t h = (area->y2 - area->y1 + 1);
-
-    tft.startWrite();
-    tft.setAddrWindow(area->x1, area->y1, w, h);
-    tft.pushColors(reinterpret_cast<uint16_t *>(color_p), w * h, true);
-    tft.endWrite();
-
+static void lvglFlushToDisplay(lv_display_t * disp, const lv_area_t * area, uint8_t * data) {
+    const uint32_t w = area->x2 - area->x1 + 1;
+    const uint32_t h = area->y2 - area->y1 + 1;
+    DisplayService::instance().pushToDisplay(reinterpret_cast<uint16_t *>(data), area->x1, area->y1, w, h);
     lv_display_flush_ready(disp);
 }
 
-DisplayService::DisplayService() : Task("DisplayService", 12288, 2),
-                                   disp(nullptr), drawBuffer(), drawBuf1(nullptr), drawBuf2(nullptr),
-                                   isLvglReady(false) {
-    tft.begin();
-    tft.setRotation(0);
-    tft.setSwapBytes(true);
+static uint32_t lvglGetTicks() {
+    return xTaskGetTickCount() / portTICK_PERIOD_MS;
 }
+
+DisplayService::DisplayService() : Task("DisplayService", 12288, 2),
+                                   disp(nullptr), drawBuffer(), drawBuf1(nullptr), drawBuf2(nullptr) {}
 
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     Serial.println(msg);
@@ -51,24 +41,14 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2),
     backlight.wake();
     backlight.setBrightness(1);
 
-    tft.fillScreen(TFT_RED);
-    tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(3);
-    tft.println("=== PANIC ===");
-    tft.setTextColor(TFT_WHITE);
-    tft.setTextSize(2);
-    tft.println();
-    tft.println(msg);
-    tft.println();
-    tft.println(line > 0 ? String(func) + "+" + String(line) : String(func));
-    tft.println("in " + String(file));
-    tft.flush();
+    const auto footer = line > 0 ? String(func) + "+" + String(line) : String(func) + "\nin " + String(file);
+    tft.panic(msg, footer.c_str());
     while (true) {
         vTaskDelay(portMAX_DELAY);
     }
 }
 
-void DisplayService::setScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
+void DisplayService::setScreen(std::unique_ptr<Screen> newScreen) {
     currentScreen = std::move(newScreen);
     lv_obj_t* scr = lv_obj_create(nullptr);
     currentScreen->draw(scr);
@@ -80,11 +60,15 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     lv_label_set_text(label, message.c_str());
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
 
-    lv_timer_create(delete_timer_cb, duration, label);
+    lv_timer_create(deleteObjectOnTimer, duration, label);
 }
 
-void DisplayService::delete_timer_cb(lv_timer_t* timer) {
+void DisplayService::deleteObjectOnTimer(lv_timer_t* timer) {
     lv_obj_del_async(static_cast<lv_obj_t *>(lv_timer_get_user_data(timer)));
+}
+
+void DisplayService::pushToDisplay(uint16_t *buffer, uint32_t x, uint32_t y, uint32_t w, uint32_t h) {
+    tft.push(buffer, x, y, w, h);
 }
 
 void DisplayService::displayImageFromAPI(const String &url, const String &zone) {
@@ -118,7 +102,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
                 return;
             }
 
-            File file = SPIFFS.open(filename, FILE_WRITE);
+            fs::File file = SPIFFS.open(filename, FILE_WRITE);
             if (file) {
                 const size_t written = http.writeToStream(&file);
                 file.close();
@@ -141,11 +125,6 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     }
 }
 
-static uint32_t getTicks()
-{
-    return xTaskGetTickCount() / portTICK_PERIOD_MS;
-}
-
 [[noreturn]] void DisplayService::run() {
     button.begin();
     button.attachClick([this] {
@@ -156,17 +135,15 @@ static uint32_t getTicks()
     backlight.setBrightness(Settings::instance().brightness);
 
     lv_init();
-    lv_tick_set_cb(getTicks);
+    lv_tick_set_cb(lvglGetTicks);
 
     disp = lv_display_create(240, 240);
-    lv_display_set_flush_cb(disp, flush_cb);
+    lv_display_set_flush_cb(disp, lvglFlushToDisplay);
 
     constexpr uint32_t bufferSize = 240 * 10 * sizeof(uint16_t); // 10 lines buffer
     drawBuf1 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_DMA));
     drawBuf2 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_DMA));
     lv_display_set_buffers(disp, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_PARTIAL);
-
-    isLvglReady = true;
 
     // Process LVGL in this task to keep LVGL single-threaded
     const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));
@@ -183,6 +160,9 @@ static uint32_t getTicks()
     eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
 
     setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+
+    static unsigned long screenTimeout = 0;
+    static unsigned long screenSince = 0;
 
     for (;;) {
         if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
@@ -214,9 +194,6 @@ static uint32_t getTicks()
                     break;
             }
         }
-
-        static unsigned long screenTimeout = 0;
-        static unsigned long screenSince = 0;
 
         if (currentScreen) {
             if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
