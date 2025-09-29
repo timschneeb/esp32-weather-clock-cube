@@ -8,6 +8,7 @@ TFT::TFT() {
     tft.begin();
     tft.setRotation(0);
     tft.setSwapBytes(true);
+    tft.fillScreen(TFT_BLACK);
 }
 
 void TFT::push(uint16_t *buffer, const uint32_t x, const uint32_t y, const uint32_t w, const uint32_t h) {
