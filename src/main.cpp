@@ -21,6 +21,11 @@ void setup() {
         DISP_PANIC("SPIFFS init failed");
     }
 
+    if (!psramInit()) {
+        Serial.println("Failed to initialize PSRAM");
+        DISP_PANIC("PSRAM init failed");
+    }
+
     esp_sntp_set_sync_interval(3600 * 1000); // Sync every hour
     // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
