@@ -18,7 +18,7 @@ class DisplayService final : public Task {
 
 public:
     [[noreturn]] void panic(const char* msg, const char* func, int line, const char* file);
-    void setScreen(std::unique_ptr<Screen> newScreen);
+    void setScreen(std::unique_ptr<Screen> newScreen, unsigned long timeoutSec = 0);
     void showOverlay(const String& message, unsigned long duration);
     void pushToDisplay(uint16_t* buffer, uint32_t x, uint32_t y, uint32_t w, uint32_t h);
 

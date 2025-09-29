@@ -48,7 +48,8 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2),
     }
 }
 
-void DisplayService::setScreen(std::unique_ptr<Screen> newScreen) {
+void DisplayService::setScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
+    // TODO timeout ignored
     currentScreen = std::move(newScreen);
     lv_obj_t* scr = lv_obj_create(nullptr);
     currentScreen->draw(scr);
@@ -161,9 +162,6 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
 
     setScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
 
-    static unsigned long screenTimeout = 0;
-    static unsigned long screenSince = 0;
-
     for (;;) {
         if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
             switch (event->id()) {
@@ -194,6 +192,9 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
                     break;
             }
         }
+
+        static unsigned long screenTimeout = 0;
+        static unsigned long screenSince = 0; // TODO <- never set
 
         if (currentScreen) {
             if (screenTimeout > 0 && millis() - screenSince > screenTimeout) {
