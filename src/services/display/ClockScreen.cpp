@@ -10,16 +10,16 @@ const char *months[] = {
 
 void ClockScreen::draw(lv_obj_t* screen) {
     _screen = screen;
-    lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_STATE_DEFAULT);
 
     date_label = lv_label_create(_screen);
-    lv_obj_set_style_text_color(date_label, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_set_style_text_color(date_label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
     lv_obj_align(date_label, LV_ALIGN_TOP_MID, 0, 5);
 
     time_label = lv_label_create(_screen);
     lv_obj_align(time_label, LV_ALIGN_TOP_MID, 0, 40);
-    lv_obj_set_style_text_font(time_label, &lv_font_montserrat_48, 0);
-    lv_obj_set_style_text_color(time_label, lv_color_hex(0xFFFFFF), 0);
+    lv_obj_set_style_text_font(time_label, &lv_font_montserrat_48, LV_STATE_DEFAULT);
+    lv_obj_set_style_text_color(time_label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
 
     temp_label = lv_label_create(_screen);
     lv_obj_align(temp_label, LV_ALIGN_LEFT_MID, 10, 20);

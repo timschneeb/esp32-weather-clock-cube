@@ -25,15 +25,17 @@ protected:
     [[noreturn]] void run() override;
 
 private:
+    static void delete_timer_cb(lv_timer_t* timer);
     void displayImageFromAPI(const String &url, const String &zone);
 
     Button button;
     Backlight backlight;
 
-    lv_disp_drv_t disp_drv;
-    lv_disp_draw_buf_t draw_buf;
-    lv_color_t *buf1;
-    lv_color_t *buf2;
+    lv_display_t *disp;
+    lv_draw_buf_t drawBuffer;
+    uint16_t *drawBuf1;
+    uint16_t *drawBuf2;
+    bool isLvglReady;
 
     std::unique_ptr<Screen> currentScreen;
     

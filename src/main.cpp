@@ -10,12 +10,11 @@
 #include "Config.h"
 #include "Settings.h"
 #include "services/DisplayService.h"
-#include "services/LvglTask.h"
 #include "services/NetworkService.h"
 #include "services/WeatherService.h"
 #include "services/WebService.h"
 
-static void lv_log_print_g_cb(const char *buf)
+static void lv_log_print_g_cb(lv_log_level_t level, const char *buf)
 {
     Serial.write(buf);
 }
@@ -40,7 +39,6 @@ void setup() {
     configTime(0, 0, SNTP_SERVER);
 
     DisplayService::instance().start();
-    LvglTask::instance().start();
     NetworkService::instance().start();
     WeatherService::instance().start();
     WebService::instance().start();

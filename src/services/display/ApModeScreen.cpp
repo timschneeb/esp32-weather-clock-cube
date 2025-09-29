@@ -4,11 +4,11 @@
 
 void ApModeScreen::draw(lv_obj_t* screen) {
     _screen = screen;
-    lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_STATE_DEFAULT);
 
     lv_obj_t* title_label = lv_label_create(_screen);
     lv_label_set_text(title_label, "AP MODE");
-    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(title_label, &lv_font_montserrat_24, LV_STATE_DEFAULT);
     lv_obj_align(title_label, LV_ALIGN_TOP_MID, 0, 10);
 
     lv_obj_t* ssid_label = lv_label_create(_screen);
