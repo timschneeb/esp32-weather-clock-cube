@@ -18,10 +18,15 @@ void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     display = lv_display_create(width, height);
     lv_display_set_flush_cb(display, onFlush);
 
-    constexpr uint32_t bufferSize = 240 * 10 * sizeof(uint16_t); // 10 lines buffer
-    drawBuf1 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_DMA));
-    drawBuf2 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_DMA));
-    lv_display_set_buffers(display, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_PARTIAL);
+    constexpr uint32_t bufferSize = 240 * 240 * sizeof(uint16_t);
+    drawBuf1 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM));
+    drawBuf2 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM));
+    if (!drawBuf1 || !drawBuf2) {
+        Serial.println("Failed to allocate LVGL draw buffers");
+        DISP_PANIC("LVGL buffer alloc failed");
+    }
+
+    lv_display_set_buffers(display, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_FULL);
 }
 
 void LvglDisplayAdapter::setOnFlushCallback(const OnFlushCallback& callback) {
