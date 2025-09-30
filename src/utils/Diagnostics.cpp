@@ -37,9 +37,9 @@ void Diagnostics::printHeapUsage() {
     snprintf(
         buffer, PRINT_INFO_BUFFER_SIZE,
         "Heap usage:\n"
-        "              Biggest /     Free /    Total\n"
-        " SRAM : %2d%%   [%8d / %8d / %8d]\n"
-        "PSRAM : %2d%%   [%8d / %8d / %8d]",
+        "        Free%%   Biggest /     Free /    Total\n"
+        " SRAM : %2d%%   [%8d / %8d / %8d] bytes\n"
+        "PSRAM : %2d%%   [%8d / %8d / %8d] bytes",
         static_cast<int>(lfbInternal * 100 / totalInternal), lfbInternal, freeInternal, totalInternal,
         static_cast<int>(lfbSpi * 100 / totalSpi), lfbSpi, freeSpi, totalSpi
     );
