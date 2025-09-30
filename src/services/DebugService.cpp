@@ -15,7 +15,6 @@ void DebugService::run() {
         Diagnostics::printHeapUsage();
         Diagnostics::printGlobalHeapWatermark();
         Diagnostics::printTasks();
-        Diagnostics::printFullHeapDump();
         vTaskDelay(pdMS_TO_TICKS(DEBUG_DUMP_INTERVAL_MS));
     }
 }

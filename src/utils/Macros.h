@@ -45,4 +45,19 @@
     return; \
 }
 
+
+#define DIAG_ENTER_SUPPRESS_IDLE_WDT \
+    LOG_WARN("Suppressing idle WDT on core %d", xPortGetCoreID()); \
+    if (xPortGetCoreID() == 0) \
+        disableCore0WDT(); \
+    else \
+        disableCore1WDT();
+
+#define DIAG_EXIT_SUPPRESS_IDLE_WDT \
+    if (xPortGetCoreID() == 0) \
+        enableCore0WDT(); \
+    else \
+        enableCore1WDT(); \
+    LOG_WARN("Re-enabled idle WDT on core %d", xPortGetCoreID());
+
 #endif //MACROS_H

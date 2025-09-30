@@ -7,8 +7,11 @@
 #include "Macros.h"
 
 void Diagnostics::printFullHeapDump() {
+    // Disable watchdogs to prevent resets during long debug operation
+    DIAG_ENTER_SUPPRESS_IDLE_WDT
     heap_caps_dump_all();
     LOG_INFO()
+    DIAG_EXIT_SUPPRESS_IDLE_WDT
 }
 
 void Diagnostics::printTasks() {
