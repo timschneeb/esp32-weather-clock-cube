@@ -306,9 +306,9 @@ void WebApi::onKeepAliveRequest(AsyncWebServerRequest *request) {
 }
 
 void WebApi::onDiagRequest(AsyncWebServerRequest *request) {
-    request->send(200, "application/json","{\"status\": \"OK\"}");
-    Diagnostics::printFullHeapDump();
-    Diagnostics::printHeapUsage();
+    const auto heap = Diagnostics::collectHeapUsage();
+    request->send(200, "text/plain", heap);
+    LOG_INFO("%s", heap.c_str());
     Diagnostics::printGlobalHeapWatermark();
 }
 

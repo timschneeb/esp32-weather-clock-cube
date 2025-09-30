@@ -25,6 +25,10 @@ void Diagnostics::printGlobalHeapWatermark() {
 }
 
 void Diagnostics::printHeapUsage() {
+    LOG_INFO("%s", collectHeapUsage().c_str());
+}
+
+String Diagnostics::collectHeapUsage() {
     #define PRINT_INFO_BUFFER_SIZE  256
     const auto freeInternal = heap_caps_get_free_size(MALLOC_CAP_INTERNAL);
     const auto lfbInternal = heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL);
@@ -43,9 +47,9 @@ void Diagnostics::printHeapUsage() {
         static_cast<int>(lfbInternal * 100 / totalInternal), lfbInternal, freeInternal, totalInternal,
         static_cast<int>(lfbSpi * 100 / totalSpi), lfbSpi, freeSpi, totalSpi
     );
-    LOG_INFO("%s", buffer);
-
+    const String result(buffer);
     free(buffer);
+    return result;
 }
 
 JsonDocument Diagnostics::getTasksJson(const bool print) {

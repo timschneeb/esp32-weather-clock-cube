@@ -17,6 +17,7 @@ public:
     static void printTasks();
     static void printGlobalHeapWatermark();
     static void printHeapUsage();
+    static String collectHeapUsage();
 
     static JsonDocument getTasksJson(bool print = false);
 };
