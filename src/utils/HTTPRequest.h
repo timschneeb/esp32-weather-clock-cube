@@ -42,7 +42,7 @@ public:
 
         // Timeout check
         if (_timeoutMs != 0 && millis() - _startTime > _timeoutMs) {
-            LOG_ERROR("Timeout %ulms, retrying...", millis() - _startTime);
+            LOG_ERROR("Timeout %llms, retrying...", millis() - _startTime);
             if (_attempt < _retryCount) {
                 _attempt++;
                 request.abort();

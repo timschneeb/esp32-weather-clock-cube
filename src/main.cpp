@@ -13,8 +13,14 @@
 #include "services/WeatherService.h"
 #include "services/WebService.h"
 
+void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t caps, const char *function_name)
+{
+    LOG_ERROR("%s was called but failed to allocate %d bytes with 0x%X capabilities", function_name, requested_size, caps);
+}
+
 void setup() {
     Serial.begin(115200);
+    heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
 
     if (!SPIFFS.begin(true)) {
         LOG_ERROR("Failed to mount SPIFFS! Did you forget to flash the filesystem?");

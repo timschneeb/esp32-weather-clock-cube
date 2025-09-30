@@ -4,13 +4,18 @@
 
 #include "DebugService.h"
 
+#include "utils/Diagnostics.h"
+
 #define DEBUG_DUMP_INTERVAL_MS 10000
 
 DebugService::DebugService() : Task("DebugService", 2048, 1) {}
 
 void DebugService::run() {
     for (;;) {
-
+        Diagnostics::printHeapUsage();
+        Diagnostics::printGlobalHeapWatermark();
+        Diagnostics::printTasks();
+        Diagnostics::printFullHeapDump();
         vTaskDelay(pdMS_TO_TICKS(DEBUG_DUMP_INTERVAL_MS));
     }
 }

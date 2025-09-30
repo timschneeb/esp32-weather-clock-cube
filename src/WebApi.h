@@ -32,6 +32,8 @@ private:
     void onRebootRequest(AsyncWebServerRequest *request);
     void onKeepAliveRequest(AsyncWebServerRequest *request);
 
+    void onDiagRequest(AsyncWebServerRequest *request);
+
     static String getImagesList();
     static String getCheckedAttribute(bool isChecked);
 };

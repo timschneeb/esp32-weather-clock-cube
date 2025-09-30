@@ -16,6 +16,7 @@
 #include "Settings.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
+#include "utils/Diagnostics.h"
 #include "utils/Macros.h"
 
 using namespace ArduinoJson;
@@ -36,6 +37,7 @@ WebApi::WebApi(): server(80) {
     server.on("/show_image", HTTP_GET, BIND_CB(onShowImageRequest));
     server.on("/reboot", HTTP_GET, BIND_CB(onRebootRequest));
     server.on("/keepalive", HTTP_GET, BIND_CB(onKeepAliveRequest));
+    server.on("/diag", HTTP_GET, BIND_CB(onDiagRequest));
 #undef BIND_UPLOAD_CB
 #undef BIND_CB
 
@@ -298,9 +300,16 @@ void WebApi::onRebootRequest(AsyncWebServerRequest *request) {
 void WebApi::onKeepAliveRequest(AsyncWebServerRequest *request) {
     const auto now = millis();
     const auto until = now + KEEPALIVE_TIMEOUT;
-    LOG_DEBUG("Signal received at %ul", now);
+    LOG_DEBUG("Signal received at %lld", now);
     request->send(200, "application/json","{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
     EventBus::instance().publish<API_KeepAliveEvent>(now);
+}
+
+void WebApi::onDiagRequest(AsyncWebServerRequest *request) {
+    request->send(200, "application/json","{\"status\": \"OK\"}");
+    Diagnostics::printFullHeapDump();
+    Diagnostics::printHeapUsage();
+    Diagnostics::printGlobalHeapWatermark();
 }
 
 
