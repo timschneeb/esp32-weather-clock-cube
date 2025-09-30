@@ -1,7 +1,6 @@
 #include <Arduino.h>
 #include <esp_sntp.h>
 #include <SPIFFS.h>
-#include <WiFi.h>
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <AsyncHTTPRequest_Generic.h> // Library doesn't handle multiple includes well, needs to be included here
@@ -18,12 +17,12 @@ void setup() {
     Serial.begin(115200);
 
     if (!SPIFFS.begin(true)) {
-        Serial.println("Failed to mount SPIFFS! Did you forget to flash the filesystem?");
+        LOG_ERROR("Failed to mount SPIFFS! Did you forget to flash the filesystem?");
         DISP_PANIC("SPIFFS init failed");
     }
 
     if (!psramInit()) {
-        Serial.println("Failed to initialize PSRAM");
+        LOG_ERROR("Failed to initialize PSRAM");
         DISP_PANIC("PSRAM init failed");
     }
 
@@ -31,7 +30,7 @@ void setup() {
     // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
         const String timezone = Settings::instance().timezone;
-        Serial.printf("Setting Timezone to %s\n", timezone.c_str());
+        LOG_INFO("Setting Timezone to %s\n", timezone.c_str());
         setenv("TZ", timezone.c_str(), 1);
         tzset();
     });

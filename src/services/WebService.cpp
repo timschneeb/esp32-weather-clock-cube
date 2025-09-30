@@ -11,6 +11,7 @@
 #include "Settings.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
+#include "utils/Macros.h"
 
 using namespace ArduinoJson;
 
@@ -44,15 +45,14 @@ void WebService::setupMqttFromSettings() {
 
 void WebService::onMqttConnect(bool sessionPresent)
 {
-    Serial.println("[MQTT] Connected!");
+    LOG_INFO("MQTT connected!");
     mqttClient.subscribe(MQTT_TOPIC, 0);
     vTaskSuspend(handle());
 }
 
 void WebService::onMqttDisconnect(AsyncMqttClientDisconnectReason reason) const
 {
-    Serial.print("[MQTT] Connection lost with reason: ");
-    Serial.println(static_cast<int>(reason));
+    LOG_ERROR("MQTT connection lost with reason: %d", static_cast<int>(reason));
     EventBus::instance().publish<WEB_MqttDisconnectedEvent>(reason);
     vTaskResume(handle());
 }
@@ -68,17 +68,14 @@ void WebService::onMqttMessage(
     String payloadStr;
     for (size_t i = 0; i < len; i++)
         payloadStr += payload[i];
-    Serial.println("====[MQTT RECEIVED]====");
-    Serial.print("Topic:   ");
-    Serial.println(topic);
-    Serial.print("Payload: ");
-    Serial.println(payloadStr);
+    LOG_DEBUG("====[MQTT RECEIVED]====");
+    LOG_DEBUG("Topic:   %s", topic);
+    LOG_DEBUG("Payload: %s", payloadStr.c_str());
 
     JsonDocument doc;
     DeserializationError error = deserializeJson(doc, payload, len);
     if (error) {
-        Serial.print("[DEBUG] JSON parsing error: ");
-        Serial.println(error.c_str());
+        LOG_ERROR("JSON parsing error: %s", error.c_str());
         EventBus::instance().publish<WEB_MqttErrorEvent>("JSON Parse Error:\n" + String(error.c_str()));
         return;
     }
@@ -92,7 +89,7 @@ void WebService::onMqttMessage(
     } else if (type == "update" && doc["after"].is<JsonObject>()) {
         msg = doc["after"].as<JsonObject>();
     } else {
-        Serial.println("[DEBUG] Ignoring message of type '" + type + "'");
+        LOG_DEBUG("Ignoring message of type '%s'", type.c_str());
         return;
     }
 

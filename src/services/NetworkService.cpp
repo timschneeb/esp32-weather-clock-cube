@@ -11,6 +11,7 @@
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "Settings.h"
+#include "utils/Macros.h"
 
 constexpr auto WIFI_TIMEOUT = 25000;
 
@@ -32,7 +33,7 @@ bool NetworkService::isConnected() {
             sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED &&
             sntp_get_sync_status() != SNTP_SYNC_STATUS_IN_PROGRESS) {
 
-            Serial.println("Restarting SNTP time sync...");
+            LOG_DEBUG("Restarting SNTP time sync...");
             configTime(0, 0, SNTP_SERVER);
         }
 
@@ -45,11 +46,11 @@ bool NetworkService::isConnected() {
         String pwd = Settings::instance().pwd;
 
         if (ssid.isEmpty()) {
-            Serial.println("No saved SSID, switching to AP mode...");
+            LOG_DEBUG("No saved SSID, switching to AP mode...");
             enterAPMode();
         } else {
             EventBus::instance().publish<NET_ConnectingEvent>();
-            Serial.println("Connecting to WiFi... (SSID: " + ssid + ")");
+            LOG_DEBUG("Connecting to WiFi... (SSID: %s)", ssid.c_str());
 
             WiFiClass::mode(WIFI_STA);
             WiFi.begin(ssid.c_str(), pwd.c_str());
@@ -62,11 +63,11 @@ bool NetworkService::isConnected() {
             }
 
             if (WiFiClass::status() != WL_CONNECTED) {
-                Serial.println("WiFi failed, fallback to AP mode...");
+                LOG_ERROR("WiFi failed, fallback to AP mode...");
                 enterAPMode();
             } else {
-                Serial.println("WiFi connected to: " + Settings::instance().ssid);
-                Serial.println("IP address: " + WiFi.localIP().toString());
+                LOG_DEBUG("WiFi connected to: %s", Settings::instance().ssid.load().c_str());
+                LOG_DEBUG("IP address: %s", WiFi.localIP().toString().c_str());
                 EventBus::instance().publish<NET_StaConnectedEvent>();
             }
         }

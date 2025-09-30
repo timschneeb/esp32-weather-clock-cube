@@ -21,10 +21,8 @@ void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     constexpr uint32_t bufferSize = 240 * 240 * sizeof(uint16_t);
     drawBuf1 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM));
     drawBuf2 = static_cast<uint16_t *>(heap_caps_malloc(bufferSize, MALLOC_CAP_SPIRAM));
-    if (!drawBuf1 || !drawBuf2) {
-        Serial.println("Failed to allocate LVGL draw buffers");
-        DISP_PANIC("LVGL buffer alloc failed");
-    }
+    ASSERT_OR_PANIC(drawBuf1, "LVGL buffer 1 alloc failed");
+    ASSERT_OR_PANIC(drawBuf2, "LVGL buffer 2 alloc failed");
 
     lv_display_set_buffers(display, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_FULL);
 }
@@ -48,7 +46,22 @@ void LvglDisplayAdapter::onFlush(lv_display_t * disp, const lv_area_t * area, ui
     lv_display_flush_ready(disp);
 }
 
-void LvglDisplayAdapter::onLog(lv_log_level_t level, const char *buf) {
-    // TODO create logging system and integrate with this
-    Serial.write(buf);
+void LvglDisplayAdapter::onLog(const lv_log_level_t level, const char *buf) {
+    switch (level) {
+        case LV_LOG_LEVEL_ERROR:
+            LOG_ERROR("%s", buf);
+            break;
+        case LV_LOG_LEVEL_WARN:
+            LOG_WARN("%s", buf);
+            break;
+        case LV_LOG_LEVEL_INFO:
+            LOG_INFO("%s", buf);
+            break;
+        case LV_LOG_LEVEL_TRACE:
+            LOG_VERBOSE("%s", buf);
+            break;
+        default:
+            LOG_DEBUG("%s", buf);
+            break;
+    }
 }

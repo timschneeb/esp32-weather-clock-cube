@@ -4,6 +4,8 @@
 
 #include "Diagnostics.h"
 
+#include "Macros.h"
+
 void Diagnostics::printTasks() {
     getTasksJson(true);
 }
@@ -23,8 +25,8 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
         root["rt"] = ulTotalRunTime;
 
         if (print) {
-            Serial.println("==> Active tasks (runtime: " + String(ulTotalRunTime) + " ticks)");
-            Serial.println("\tNum\tState\tCurPrio\tBasePrio\tRunTimeCnt\tMaxStack\tName");
+            LOG_INFO("==> Active tasks (runtime: %ul ticks)", ulTotalRunTime);
+            LOG_INFO("\tNum\tState\tCurPrio\tBasePrio\tRunTimeCnt\tMaxStack\tName");
         }
 
         const TaskStatus_t *tp = pxTaskStatusArray;
@@ -41,17 +43,17 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
 
             // TODO add more; like runtime percentage
             if (print) {
-                Serial.printf("\t%-2d\t%-5d\t%-7d\t%-9d\t%-11d\t%-8d\t%s\n",
-                              tp->xTaskNumber,
-                                tp->eCurrentState,
-                                tp->uxCurrentPriority,
-                                tp->uxBasePriority,
-                                tp->ulRunTimeCounter,
-                                tp->usStackHighWaterMark,
-                                tp->pcTaskName);
+                LOG_INFO("\t%-2d\t%-5d\t%-7d\t%-9d\t%-11d\t%-8d\t%s\n",
+                        tp->xTaskNumber,
+                        tp->eCurrentState,
+                        tp->uxCurrentPriority,
+                        tp->uxBasePriority,
+                        tp->ulRunTimeCounter,
+                        tp->usStackHighWaterMark,
+                        tp->pcTaskName);
             }
         }
-        Serial.println();
+        LOG_INFO()
     }
     vPortFree(pxTaskStatusArray);
     return std::move(doc);

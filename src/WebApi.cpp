@@ -16,6 +16,7 @@
 #include "Settings.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
+#include "utils/Macros.h"
 
 using namespace ArduinoJson;
 
@@ -288,7 +289,7 @@ void WebApi::onShowImageRequest(AsyncWebServerRequest *request) {
 }
 
 void WebApi::onRebootRequest(AsyncWebServerRequest *request) {
-    Serial.println("[WEB] Reboot requested via /reboot");
+    LOG_INFO("Reboot requested");
     request->send(200, "text/plain", "Rebooting ESP32...");
     vTaskDelay(pdMS_TO_TICKS(500));
     ESP.restart();
@@ -297,12 +298,8 @@ void WebApi::onRebootRequest(AsyncWebServerRequest *request) {
 void WebApi::onKeepAliveRequest(AsyncWebServerRequest *request) {
     const auto now = millis();
     const auto until = now + KEEPALIVE_TIMEOUT;
-    Serial.println("[WEB] Keep-alive signal received at " + String(now));
-
-    request->send(200, "application/json",
-                  "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
-    // Print core
-    Serial.println("[WEB] Keep-alive on core " + String(xPortGetCoreID()));
+    LOG_DEBUG("Signal received at %ul", now);
+    request->send(200, "application/json","{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
     EventBus::instance().publish<API_KeepAliveEvent>(now);
 }
 

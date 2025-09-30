@@ -14,6 +14,7 @@
 #include "utils/HTTPRequest.h"
 #include "services/NetworkService.h"
 #include "Settings.h"
+#include "utils/Macros.h"
 
 WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
 
@@ -24,13 +25,13 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
             continue;
         }
 
-        Serial.println("[WEATHER] Fetch weather started");
+        LOG_INFO("Fetch weather started");
 
         String apiKey = Settings::instance().weatherApiKey;
         String city = Settings::instance().weatherCity;
 
         if (apiKey.isEmpty() || city.isEmpty()) {
-            Serial.println("[WEATHER] No API key or city set");
+            LOG_WARN("No API key or city set");
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
@@ -52,30 +53,24 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
         }
 
         HTTPResult resNow = httpNowTask.result();
-        if (resNow.success)
-            Serial.println("[WEATHER] (Now) Payload size: " + String(resNow.payload.length()));
-        else
-            Serial.println("[WEATHER] (Now) Error " + String(resNow.statusCode) + "; payload: " + resNow.payload);
-
         if (resNow.success) {
+            LOG_DEBUG("(Now) Payload size: %d", resNow.payload.length());
             JsonDocument doc;
             if (!deserializeJson(doc, resNow.payload)) {
                 Settings::instance().weatherTempDay = doc["main"]["temp"] | 0.0f;
                 Settings::instance().weatherHumidity = doc["main"]["humidity"] | 0.0f;
                 Settings::instance().weatherIcon = doc["weather"][0]["icon"].as<String>();
             } else {
-                Serial.println("[WEATHER] JSON parse error (current)");
+                LOG_ERROR("JSON parse error (current)");
             }
+        } else {
+            LOG_ERROR("(Now) Error %d; payload: %s", resNow.statusCode, resNow.payload.c_str());
         }
 
         if (!skipForecast) {
             HTTPResult resFc = httpForecastTask.result();
-            if (resFc.success)
-                Serial.println("[WEATHER] (FC) Payload size: " + String(resFc.payload.length()));
-            else
-                Serial.println("[WEATHER] (FC) Error " + String(resFc.statusCode) + "; payload: " + resFc.payload);
-
             if (resFc.success) {
+                LOG_DEBUG("(FC) Payload size: %d", resFc.payload.length())
                 JsonDocument doc;
                 if (!deserializeJson(doc, resFc.payload)) {
                     float minTemp = 999.0f, maxTemp = -999.0f;
@@ -89,7 +84,7 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
                     }
 
                     if (minTemp >= 999.0f || maxTemp <= -999.0f) {
-                        Serial.println("[WEATHER] No forecasts found for today (no date match)");
+                        LOG_WARN("No forecasts found for today (no date match)");
                         minTemp = 0.0f;
                         maxTemp = 0.0f;
                     }
@@ -97,16 +92,19 @@ WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
                     Settings::instance().weatherTempMin = minTemp;
                     Settings::instance().weatherTempMax = maxTemp;
                 } else {
-                    Serial.println("[WEATHER] JSON parse error (forecast)");
+                    LOG_ERROR("JSON parse error (forecast)");
                 }
+            }
+            else {
+                LOG_ERROR("(FC) Error %d; payload: %s", resFc.statusCode, resFc.payload.c_str());
             }
         }
         else {
-            Serial.println("[WEATHER] Forecast fetch skipped, already done for today");
+            LOG_INFO("Forecast fetch skipped, already done for today");
         }
 
         Settings::instance().save();
-        Serial.println("[WEATHER] Weather update complete");
+        LOG_INFO("Weather update complete");
         EventBus::instance().publish<WEA_ForecastUpdatedEvent>();
 
         vTaskDelay(pdMS_TO_TICKS(20000));

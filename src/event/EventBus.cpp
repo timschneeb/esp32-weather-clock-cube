@@ -19,7 +19,7 @@ void EventBus::subscribe(const EventId eventId, const QueueHandle_t queue)
             subscriptions[subscriberCount] = { eventId, queue };
             subscriberCount++;
         } else {
-            Serial.println("[EventBus] ERROR: Max subscribers reached. Subscription failed.");
+            LOG_ERROR("Max subscribers reached. Subscription failed.");
         }
         xSemaphoreGive(mutex);
     }
@@ -41,19 +41,14 @@ void EventBus::unsubscribe(const EventId eventId, const QueueHandle_t queue)
 }
 
 void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, const bool urgent) const {
-    if (!event) {
-        Serial.println("[EventBus] ERROR: Event is null.");
-        return;
-    }
+    RETURN_IF_FAILED(event != nullptr, "Event is null");
 
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
-        Serial.println("[EventBus] Publishing " + String(named_enum::name(event->id())) + " " + (urgent ? "(urgent)" : ""));
+        LOG_DEBUG("Dispatching %s %s", named_enum::name(event->id()), (urgent ? "(urgent)" : ""));
         for (size_t i = 0; i < subscriberCount; ++i) {
             const auto& sub = subscriptions[i];
             if (sub.eventId == event->id()) {
                 auto* heapEventPtr = new EventPtr(event);
-                Serial.println("[EventBus]\tto subscriber " + String(i));
-
                 BaseType_t result;
                 if (urgent)
                     result = xQueueSendToFront(sub.queue, &heapEventPtr, ticksToWait);
@@ -61,7 +56,7 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, cons
                     result = xQueueSend(sub.queue, &heapEventPtr, ticksToWait);
 
                 if (result == errQUEUE_FULL) {
-                    Serial.println("[EventBus]\tQueue full, event dropped for subscriber " + String(i));
+                    LOG_ERROR("Queue full, event dropped for subscriber %u", i);
                     DISP_PANIC(String(
                         "Queue full\n" +
                         String(named_enum::name(event->id())) + " dropped\n"

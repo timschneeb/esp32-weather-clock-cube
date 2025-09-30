@@ -24,8 +24,7 @@
 DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
-    Serial.println(msg);
-    Serial.println("at " + String(func) + "+" + String(line) + " in " + String(file));
+    LOG_ERROR("'%s' at %s+%d in %s", msg, func, line, file);
 
     backlight.wake();
     backlight.setBrightness(1);

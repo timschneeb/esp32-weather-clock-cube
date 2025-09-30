@@ -35,14 +35,14 @@ public:
             return false;
 
         if (!NetworkService::isConnected()) {
-            Serial.println("[HTTP] Network disconnected, aborting request...");
+            LOG_ERROR("Network disconnected, aborting request...");
             request.abort();
             return false;
         }
 
         // Timeout check
         if (_timeoutMs != 0 && millis() - _startTime > _timeoutMs) {
-            Serial.println("[HTTP] Timeout " + String(millis() - _startTime)  + "ms, retrying...");
+            LOG_ERROR("Timeout %ulms, retrying...", millis() - _startTime);
             if (_attempt < _retryCount) {
                 _attempt++;
                 request.abort();
@@ -68,7 +68,7 @@ private:
                 _result.statusCode = req->responseHTTPcode();
                 _result.success = _result.statusCode >= 200 && _result.statusCode < 300;
                 _result.payload = req->responseText();
-                Serial.println("[HTTP] Request finished with status " + String(_result.statusCode) + ": " + String(_url));
+                LOG_DEBUG("HTTP request finished with status %d: %s", _result.statusCode, _url.c_str());
 
                 // Only mark finished if success or retries exhausted
                 if (!_result.success && _attempt < _retryCount) {
@@ -80,7 +80,7 @@ private:
                 }
             }
             else if (readyState < 0) {
-                Serial.println("[HTTP] Request error " + String(readyState) + " " + String(_url));
+                LOG_ERROR("HTTP request error (state=%d) %s", readyState, _url.c_str());
                 if (_attempt < _retryCount) {
                     _attempt++;
                     request.abort();
