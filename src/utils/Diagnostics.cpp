@@ -46,7 +46,7 @@ void Diagnostics::printHeapUsage() {
 }
 
 JsonDocument Diagnostics::getTasksJson(const bool print) {
-    // TODO
+    // TODO: setup FreeRTOS correctly for this
 #undef configUSE_TRACE_FACILITY
     return JsonDocument();
 #ifndef configUSE_TRACE_FACILITY
@@ -79,7 +79,7 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
             ti["max_stack_usage"] = tp->usStackHighWaterMark;
             tp++;
 
-            // TODO add more; like runtime percentage
+            // TODO: add more; like runtime percentage
             if (print) {
                 LOG_INFO("\t%-2d\t%-5d\t%-7d\t%-9d\t%-11d\t%-8d\t%s\n",
                         tp->xTaskNumber,
