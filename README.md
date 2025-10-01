@@ -1,7 +1,7 @@
 # Desk Weather Clock (GeekMagic-S3)
 ESP32-S3 firmware for displaying current time, date, weather, and image notifications from other devices on a 240x240 display.
 
-**Built for the GeekMagic-S3 bought from AliExpress** (based on `esp32-s3-devkitm-1` with 16MB flash, 8MB PSRAM and a 240x240 TFT display)
+**Built for the [GeekMagic-S3](https://github.com/GeekMagicClock/GeekMagic-S3) bought from AliExpress** (based on `esp32-s3-devkitm-1` with 16MB flash, 8MB PSRAM and a 240x240 TFT display)
 
 This project is designed to be built using [PlatformIO](https://platformio.org/)
 
