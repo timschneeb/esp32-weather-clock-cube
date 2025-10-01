@@ -20,6 +20,12 @@ This project is designed to be built using [PlatformIO](https://platformio.org/)
 - Live Frigate Notifications via MQTT on ESP32-S3 with automatic image downloading.
 - Image Slideshow of recent events with zone labeling, auto-clearing logic, and memory limits.
 
+### Build
+```
+pio run -t uploadfs     # Upload SPIFFS flash image
+pio run -t upload       # Upload firmware
+```
+
 ### Wokwi Simulator support
 
 This project can be run in the [Wokwi simulator](https://wokwi.com/). Note that the simulator is much slower than the real hardware, so the display updates will be slow.
