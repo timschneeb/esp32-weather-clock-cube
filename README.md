@@ -1,12 +1,9 @@
-# GeekMagic-S3-Frigate-Event-Viewer
-ESP32-S3 firmware for displaying event snapshots from Frigate on a 240x240 display
+# Desk Weather Clock (GeekMagic-S3)
+ESP32-S3 firmware for displaying current time, date, weather, and image notifications from other devices on a 240x240 display.
 
-**Built for:** 
-**GeekMagic-S3** (based on `esp32-s3-devkitm-1` with 16MB flash + 240x240 TFT display)
+**Built for the GeekMagic-S3 bought from AliExpress** (based on `esp32-s3-devkitm-1` with 16MB flash, 8MB PSRAM and a 240x240 TFT display)
+
 This project is designed to be built using [PlatformIO](https://platformio.org/)
-
-A compact and configurable ESP32-S3 firmware for displaying event snapshots from **Frigate**, weather data, and clock information — all in real time on a 240x240 screen.
-
 ---
 
 Features:
@@ -20,9 +17,6 @@ Features:
 - Persistent Storage using Preferences and SPIFFS to save settings and event images.
 - Fallback AP-mode if WiFi is not available.
 
----
+### Acknowledgements
 
-![Image-Clock](https://github.com/user-attachments/assets/957b44dd-ae78-4843-9c73-cd74e6f4e380)
-
-
-
+- [GeekMagic-S3-Frigate-Event-Viewer](https://github.com/Marijn0/GeekMagic-S3-Frigate-Event-Viewer) was used as a template and re-written using FreeRTOS and LVGL.
