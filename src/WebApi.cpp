@@ -300,7 +300,7 @@ void WebApi::onRebootRequest(AsyncWebServerRequest *request) {
 void WebApi::onKeepAliveRequest(AsyncWebServerRequest *request) {
     const auto now = millis();
     const auto until = now + KEEPALIVE_TIMEOUT;
-    LOG_DEBUG("Signal received at %lld", now);
+    LOG_DEBUG("Signal received at %lu", now);
     request->send(200, "application/json","{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
     EventBus::instance().publish<API_KeepAliveEvent>(now);
 }

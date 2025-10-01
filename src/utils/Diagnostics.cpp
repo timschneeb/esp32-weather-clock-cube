@@ -70,7 +70,7 @@ JsonDocument Diagnostics::getTasksJson(const bool print) {
         root["rt"] = ulTotalRunTime;
 
         if (print) {
-            LOG_INFO("==> Active tasks (runtime: %lld ticks)", ulTotalRunTime);
+            LOG_INFO("==> Active tasks (runtime: %lu ticks)", ulTotalRunTime);
             LOG_INFO("\tNum\tState\tCurPrio\tBasePrio\tRunTimeCnt\tMaxStack\tName");
         }
 
