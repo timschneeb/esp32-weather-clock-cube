@@ -11,6 +11,7 @@
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "Settings.h"
+#include "utils/Environment.h"
 #include "utils/Macros.h"
 
 constexpr auto WIFI_TIMEOUT = 25000;
@@ -45,10 +46,10 @@ bool NetworkService::isConnected() {
         String ssid = Settings::instance().ssid;
         String pwd = Settings::instance().pwd;
 
-        // Note: Try to properly detect Wokwi environment
-        if (ssid.isEmpty() && pwd.isEmpty()) {
-            LOG_DEBUG("No saved credentials, defaulting to Wokwi emulator network");
+        if (Environment::isWokwiEmulator()) {
+            LOG_DEBUG("Using virtual Wokwi emulator network");
             ssid = "Wokwi-GUEST";
+            pwd = "";
         }
 
         if (ssid.isEmpty()) {

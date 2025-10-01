@@ -20,7 +20,8 @@ namespace Environment {
 
         // Emulator MAC set in diagram.json: 24:0a:c4:12:34:56
         _isWokwiCache = mac[0] == 0x24 && mac[1] == 0x0a && mac[2] == 0xc4 ? 1 : 0;
-        LOG_DEBUG("isWokwiEmulator: %s", _isWokwiCache == 1 ? "true" : "false");
+        if (_isWokwiCache == 1)
+            LOG_INFO("Detected Wokwi emulator environment");
         return _isWokwiCache;
     }
 }
