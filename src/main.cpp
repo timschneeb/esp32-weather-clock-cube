@@ -12,11 +12,26 @@
 #include "services/NetworkService.h"
 #include "services/WeatherService.h"
 #include "services/WebService.h"
+#include "utils/Diagnostics.h"
 #include "utils/Environment.h"
 
 void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t caps, const char *function_name)
 {
+    DIAG_ENTER_SUPPRESS_IDLE_WDT
     LOG_ERROR("%s was called but failed to allocate %d bytes with 0x%X capabilities", function_name, requested_size, caps);
+    Diagnostics::printHeapUsageSafely();
+
+    heap_caps_print_heap_info(0xFFFFFF);
+
+    if (heap_caps_check_integrity_all(true)) {
+        LOG_INFO("Heap integrity check OK");
+    }
+    else {
+        LOG_ERROR("Heap is corrupted");
+    }
+
+    DISP_PANIC("Out of memory");
+    DIAG_EXIT_SUPPRESS_IDLE_WDT
 }
 
 void setup() {
