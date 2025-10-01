@@ -223,7 +223,7 @@
 #define TFT_MISO -1 // In some display driver board, it might be written as "SDA" and so on.
 #define TFT_MOSI 11 // In some display driver board, it might be written as "SDA" and so on.
 #define TFT_SCLK 12
-#define TFT_CS   -1  // Chip select control pin
+#define TFT_CS   15  // NC on hardware! Pin 15 on emulator // Chip select control pin
 #define TFT_DC   7  // Data Command control pin
 #define TFT_RST  6  // Reset pin (could connect to Arduino RESET pin)
 #define TFT_BL   14  // LED back-light

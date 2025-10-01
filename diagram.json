@@ -1,0 +1,39 @@
+{
+  "version": 1,
+  "author": "Tim Schneeberger",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-s3-devkitc-1", "id": "esp", "top": -0.18, "left": 14.17, "attrs": {
+      "psramSize": "8",
+      "psramType": "octal",
+      "flashSize": "16",
+      "macAddress": "24:0a:c4:12:34:56"
+    } },
+    {
+      "type": "wokwi-pushbutton",
+      "id": "btn1",
+      "top": -61,
+      "left": 28.8,
+      "attrs": { "color": "green", "xray": "1" }
+    },
+    { "type": "wokwi-ili9341", "id": "lcd1", "top": -220, "left": -173.1,
+      "attrs": {
+        "flipHorizontal": "1"
+      }
+    }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "esp:5V", "lcd1:VCC", "red", [ "h0" ] ],
+    [ "lcd1:GND", "esp:GND.1", "black", [ "v0" ] ],
+    [ "esp:6", "lcd1:RST", "green", [ "h0" ] ],
+    [ "lcd1:MOSI", "esp:11", "green", [ "v0" ] ],
+    [ "lcd1:D/C", "esp:7", "green", [ "v0" ] ],
+    [ "lcd1:SCK", "esp:12", "green", [ "v0" ] ],
+    [ "btn1:2.l", "esp:9", "green", [ "v0.2", "h-19.2", "v192" ] ],
+    [ "btn1:2.r", "esp:GND.2", "green", [ "h0" ] ],
+    [ "lcd1:CS", "esp:15", "green", [ "v28.8", "h124.8" ] ]
+  ],
+  "dependencies": {}
+}

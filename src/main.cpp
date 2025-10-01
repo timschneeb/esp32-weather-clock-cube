@@ -12,6 +12,7 @@
 #include "services/NetworkService.h"
 #include "services/WeatherService.h"
 #include "services/WebService.h"
+#include "utils/Environment.h"
 
 void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t caps, const char *function_name)
 {
@@ -24,7 +25,10 @@ void setup() {
 
     if (!SPIFFS.begin(true)) {
         LOG_ERROR("Failed to mount SPIFFS! Did you forget to flash the filesystem?");
-        DISP_PANIC("SPIFFS init failed");
+        // SPIFFS is currently not setup on the Wokwi emulator, so don't panic there
+        if (!Environment::isWokwiEmulator()) {
+            DISP_PANIC("SPIFFS init failed");
+        }
     }
 
     if (!psramInit()) {

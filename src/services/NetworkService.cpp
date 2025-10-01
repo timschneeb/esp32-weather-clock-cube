@@ -45,6 +45,12 @@ bool NetworkService::isConnected() {
         String ssid = Settings::instance().ssid;
         String pwd = Settings::instance().pwd;
 
+        // Note: Try to properly detect Wokwi environment
+        if (ssid.isEmpty() && pwd.isEmpty()) {
+            LOG_DEBUG("No saved credentials, defaulting to Wokwi emulator network");
+            ssid = "Wokwi-GUEST";
+        }
+
         if (ssid.isEmpty()) {
             LOG_DEBUG("No saved SSID, switching to AP mode...");
             enterAPMode();
@@ -56,6 +62,7 @@ bool NetworkService::isConnected() {
             WiFi.begin(ssid.c_str(), pwd.c_str());
             WiFi.setAutoReconnect(true);
 
+            // TODO not reliable
             int retries = 0;
             while (WiFiClass::status() != WL_CONNECTED && retries < 30) {
                 vTaskDelay(pdMS_TO_TICKS(500));

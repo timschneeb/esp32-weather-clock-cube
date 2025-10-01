@@ -4,10 +4,13 @@
 
 #include "TFT.h"
 
+#include "utils/Environment.h"
+
 TFT::TFT() {
     tft.begin();
     tft.setRotation(0);
     tft.setSwapBytes(true);
+    tft.invertDisplay(Environment::isWokwiEmulator());
     tft.fillScreen(TFT_BLACK);
 }
 
