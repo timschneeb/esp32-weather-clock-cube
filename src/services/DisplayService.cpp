@@ -26,6 +26,12 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     LOG_ERROR("'%s' at %s+%d in %s", msg, func, line, file);
 
+    // If the caller is not the LVGL task, we must kill it to prevent further LVGL operations
+    // which could interfere with our panic display.
+    if (pcTaskGetName(nullptr) == taskName()) {
+        lvglAdapter.panic();
+    }
+
     backlight.wake();
     backlight.setBrightness(1);
 

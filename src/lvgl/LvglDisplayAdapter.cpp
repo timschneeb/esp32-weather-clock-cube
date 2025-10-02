@@ -1,13 +1,16 @@
 #include "LvglDisplayAdapter.h"
 
+#include <atomic>
 #include <lvgl.h>
 
 #include "LvSPIFFS.h"
 #include "services/DisplayService.h"
 
 static OnFlushCallback onFlushCallback;
+static std::atomic<bool> killed;
 
-LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {}
+LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {
+}
 
 void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     lv_log_register_print_cb(onLog);
@@ -35,11 +38,22 @@ void LvglDisplayAdapter::tick() {
     lv_timer_handler();
 }
 
+void LvglDisplayAdapter::panic() {
+    killed.store(true);
+}
+
 uint32_t LvglDisplayAdapter::getTicks() {
     return xTaskGetTickCount() / portTICK_PERIOD_MS;
 }
 
 void LvglDisplayAdapter::onFlush(lv_display_t * disp, const lv_area_t * area, uint8_t * data) {
+    if (killed == true) {
+        // If we triggered a panic, we stop writing to the display.
+        // The panic screen will be drawn using TFT_eSPI directly.
+        // We do not call lv_display_flush_ready(), which will block LVGL flush task forever.
+        return;
+    }
+
     const uint32_t w = area->x2 - area->x1 + 1;
     const uint32_t h = area->y2 - area->y1 + 1;
     onFlushCallback(reinterpret_cast<uint16_t *>(data), area->x1, area->y1, w, h);

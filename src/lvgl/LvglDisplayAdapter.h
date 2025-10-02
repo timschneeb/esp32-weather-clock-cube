@@ -15,8 +15,11 @@ public:
     LvglDisplayAdapter();
     void init(uint32_t width, uint32_t height);
 
-    static void setOnFlushCallback(const OnFlushCallback& callback);
+    /// Kill & block LVGL flush task (on panic)
+    static void panic();
     static void tick();
+    static void setOnFlushCallback(const OnFlushCallback& callback);
+
 private:
     lv_display_t* display;
     uint16_t *drawBuf1;
