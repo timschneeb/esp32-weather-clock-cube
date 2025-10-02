@@ -10,6 +10,8 @@ HTTPRequest::HTTPRequest() {}
 HTTPRequest::~HTTPRequest() { cleanupClient(); }
 
 void HTTPRequest::startRequest(const String& url, const uint32_t retryCount, const uint32_t timeoutMs) {
+    // TODO: URL needs to be url encoded
+
     cleanupClient();
     _url = url;
     _retryCount = retryCount;

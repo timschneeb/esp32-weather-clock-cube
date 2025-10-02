@@ -5,6 +5,8 @@ ESP32-S3 firmware for displaying current time, date, weather, and image notifica
 
 This project is designed to be built using [PlatformIO](https://platformio.org/)
 
+<img src="meta/demo.jpg" width="150" />
+
 ---
 
 ### Features
