@@ -20,8 +20,9 @@ void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t cap
     DIAG_ENTER_SUPPRESS_IDLE_WDT
     LOG_ERROR("%s was called but failed to allocate %d bytes with 0x%X capabilities", function_name, requested_size, caps);
     Diagnostics::printHeapUsageSafely();
+    Diagnostics::printGlobalHeapWatermark();
 
-    heap_caps_print_heap_info(0xFFFFFF);
+    heap_caps_print_heap_info(0xFFFFFFFF);
 
     if (heap_caps_check_integrity_all(true)) {
         LOG_INFO("Heap integrity check OK");
