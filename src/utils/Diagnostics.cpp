@@ -40,8 +40,8 @@ void Diagnostics::printHeapUsageSafely() {
         "        Free%%   Biggest /     Free /    Total\n"
         " SRAM : %2d%%   [%8d / %8d / %8d] bytes\n"
         "PSRAM : %2d%%   [%8d / %8d / %8d] bytes",
-        static_cast<int>(lfbInternal * 100 / totalInternal), lfbInternal, freeInternal, totalInternal,
-        static_cast<int>(lfbSpi * 100 / totalSpi), lfbSpi, freeSpi, totalSpi
+        static_cast<int>(freeInternal * 100 / totalInternal), lfbInternal, freeInternal, totalInternal,
+        static_cast<int>(freeSpi * 100 / totalSpi), lfbSpi, freeSpi, totalSpi
     );
 }
 
@@ -61,8 +61,8 @@ String Diagnostics::collectHeapUsage() {
         "        Free%%   Biggest /     Free /    Total\n"
         " SRAM : %2d%%   [%8d / %8d / %8d] bytes\n"
         "PSRAM : %2d%%   [%8d / %8d / %8d] bytes",
-        static_cast<int>(lfbInternal * 100 / totalInternal), lfbInternal, freeInternal, totalInternal,
-        static_cast<int>(lfbSpi * 100 / totalSpi), lfbSpi, freeSpi, totalSpi
+        static_cast<int>(freeInternal * 100 / totalInternal), lfbInternal, freeInternal, totalInternal,
+        static_cast<int>(freeSpi * 100 / totalSpi), lfbSpi, freeSpi, totalSpi
     );
     const String result(buffer);
     free(buffer);
