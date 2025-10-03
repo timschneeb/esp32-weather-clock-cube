@@ -12,10 +12,12 @@
 #include "utils/AtomicValue.h"
 #include "utils/Macros.h"
 
-/*
+/**
  * X macro: type(name, default)
+ * List of all properties with their types and default values.
+ * Used to generate member declarations, load and save methods.
  */
-#define SETTINGS_PROPERTIES(STRING,INT,FLOAT) \
+#define FOR_EACH_PROPERTY(STRING,INT,FLOAT) \
     STRING(ssid, "") \
     STRING(pwd, "") \
     STRING(mqtt, "") \
@@ -49,7 +51,7 @@ public:
 #define DECL_STRING(name, def) AtomicValue<String> name;
 #define DECL_INT(name, def) std::atomic<int> name;
 #define DECL_FLOAT(name, def) std::atomic<float> name;
-    SETTINGS_PROPERTIES(DECL_STRING, DECL_INT, DECL_FLOAT)
+    FOR_EACH_PROPERTY(DECL_STRING, DECL_INT, DECL_FLOAT)
 #undef DECL_FLOAT
 #undef DECL_INT
 #undef DECL_STRING
