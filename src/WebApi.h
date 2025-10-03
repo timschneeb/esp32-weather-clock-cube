@@ -7,7 +7,6 @@
 
 #include <Arduino.h>
 #include <ESPAsyncWebServer.h>
-#include <Preferences.h>
 
 typedef std::function<void(const String& server, int port, const String& user, const String& pass)> OnMqttConfigChangedCb;
 
@@ -19,11 +18,10 @@ public:
 
 private:
     AsyncWebServer server;
-    Preferences preferences;
     OnMqttConfigChangedCb onMqttConfigChanged;
 
     void onRootRequest(AsyncWebServerRequest *request);
-    void onSaveRequest(AsyncWebServerRequest *request);
+    void onSaveRequest(AsyncWebServerRequest *request) const;
     void onUpdateRequest(AsyncWebServerRequest *request);
     void onUpdatePostRequest(AsyncWebServerRequest *request);
     void onUpdatePostUpload(AsyncWebServerRequest *request, const String& filename, size_t index, uint8_t *data, size_t len, bool final);

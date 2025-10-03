@@ -21,7 +21,7 @@
 
 using namespace ArduinoJson;
 
-WebApi::WebApi(): server(80) {
+WebApi::WebApi() : server(80) {
     server.serveStatic("/styles.css", SPIFFS, "/styles.css");
     server.serveStatic("/scripts.js", SPIFFS, "/scripts.js");
     server.serveStatic("/events", SPIFFS, "/events");
@@ -103,74 +103,43 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
     request->send(response);
 }
 
-void WebApi::onSaveRequest(AsyncWebServerRequest *request) {
+void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
     // Safe integer fetch helper
-    auto getIntParam = [](const AsyncWebServerRequest *req, const char *name, const int def) -> int {
+    // Enforces min/max ranges and uses default if out of range or not present
+    auto getIntParam = [](const AsyncWebServerRequest *req, const char *name,
+                          const int def, const int min = INT32_MIN, const int max = INT32_MAX) -> int {
         if (req->getParam(name, true)) {
             const String v = req->getParam(name, true)->value();
-            if (v.length() > 0)
-                return v.toInt();
+            if (v.length() > 0) {
+                const int value = v.toInt();
+                if (value >= min && value <= max)
+                    return value;
+            }
         }
         return def;
     };
 
     auto *settings = &Settings::instance();
-    auto mqttServer = settings->mqtt.load();
-    auto mqttPort = settings->mqttPort.load();
-    auto mqttUser = settings->mqttUser.load();
-    auto mqttPass = settings->mqttPass.load();
 
-    preferences.begin("config", false);
-    String currentPwd = preferences.getString("pwd", "");
-    String currentMqttPass = preferences.getString("mqttpass", "");
-    String currentApiKey = preferences.getString("weatherApiKey", "");
+    auto oldMqttServer = settings->mqtt.load();
+    auto oldMqttPort = settings->mqttPort.load();
+    auto oldMqttUser = settings->mqttUser.load();
+    auto oldMqttPass = settings->mqttPass.load();
 
-    String newSSID = request->getParam("ssid", true)->value();
-    preferences.putString("ssid", newSSID);
+    settings->ssid = request->getParam("ssid", true)->value();
 
     String newPwd = request->getParam("pwd", true)->value();
     bool pwdExists = request->getParam("pwd_exists", true)->value() == "1";
     if (!pwdExists || newPwd != "******") {
-        preferences.putString("pwd", newPwd);
+        settings->pwd = newPwd;
     }
 
-    String newMqtt = request->getParam("mqtt", true)->value();
-    preferences.putString("mqtt", newMqtt);
+    settings->fip = request->getParam("fip", true)->value();
+    settings->fport = getIntParam(request, "fport", 5000, 1, 65535);
 
-    int newMqttPort = getIntParam(request, "mqttport", 0);
-    if (newMqttPort < 1 || newMqttPort > 65535)
-        newMqttPort = 1883;
-    preferences.putInt("mqttport", newMqttPort);
-
-    String newMqttUser = request->getParam("mqttuser", true)->value();
-    preferences.putString("mqttuser", newMqttUser);
-
-    String newMqttPass = request->getParam("mqttpass", true)->value();
-    bool mqttPassExists = request->getParam("mqttpass_exists", true)->value() == "1";
-    if (!mqttPassExists || newMqttPass != "******") {
-        preferences.putString("mqttpass", newMqttPass);
-    }
-
-    String newFip = request->getParam("fip", true)->value();
-    preferences.putString("fip", newFip);
-
-    int newFport = getIntParam(request, "fport", 0);
-    if (newFport < 1 || newFport > 65535)
-        newFport = 5000;
-    preferences.putInt("fport", newFport);
-
-    int newSec = getIntParam(request, "sec", 0);
-    if (newSec < 1)
-        newSec = 30;
-    preferences.putInt("sec", newSec);
-
-    int newMaxImages = getIntParam(request, "maxImages", 0);
-    newMaxImages = std::min(std::max(newMaxImages, 1), 60);
-    preferences.putInt("maxImages", newMaxImages);
-
-    int newSlideshowInterval = getIntParam(request, "slideshowInterval", 0);
-    newSlideshowInterval = std::min(std::max(newSlideshowInterval, 500), 20000);
-    preferences.putInt("slideInterval", newSlideshowInterval);
+    settings->displayDuration = getIntParam(request, "sec", 30, 1);
+    settings->maxImages = getIntParam(request, "maxImages", 0, 1, 60);
+    settings->slideshowInterval = getIntParam(request, "slideInterval", 0, 500, 20000);
 
     // Modes
     String modeValue = "";
@@ -186,37 +155,40 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) {
             modeValue += "detection";
         }
     }
-    preferences.putString("mode", modeValue);
+    settings->mode = modeValue;
 
     // Weather
     String newApiKey = request->getParam("weatherApiKey", true)->value();
     bool apiKeyExists = request->getParam("weatherApiKey_exists", true)->value() == "1";
     if (!apiKeyExists || newApiKey != "******") {
-        preferences.putString("weatherApiKey", newApiKey);
+        settings->weatherApiKey = newApiKey;
         EventBus::instance().publish<CFG_WeatherUpdatedEvent>();
     }
-    String newCity = request->getParam("weatherCity", true)->value();
-    preferences.putString("weatherCity", newCity);
 
-    auto newTimezone = request->getParam("timezoneName", true)->value();
-    preferences.putString("timezoneName", newTimezone);
+    settings->weatherCity = request->getParam("weatherCity", true)->value();
 
-    // Brightness
-    int newBrightness = getIntParam(request, "brightness", 0);
-    if (newBrightness >= 0 && newBrightness <= 255) {
-        preferences.putInt("brightness", newBrightness);
+    settings->timezone = request->getParam("timezoneName", true)->value();
+    settings->brightness = getIntParam(request, "brightness", 0, 0, 255);
+
+    // MQTT
+    String newMqtt, newMqttUser, newMqttPass;
+    int newMqttPort;
+    settings->mqtt = newMqtt = request->getParam("mqtt", true)->value();
+    settings->mqttPort = newMqttPort = getIntParam(request, "mqttport", 1883, 1, 65535);
+    settings->mqttUser = newMqttUser = request->getParam("mqttuser", true)->value();
+    newMqttPass = request->getParam("mqttpass", true)->value();
+
+    bool mqttPassExists = request->getParam("mqttpass_exists", true)->value() == "1";
+    if (!mqttPassExists || newMqttPass != "******") {
+        settings->mqttPass = newMqttPass;
     }
 
-    bool mqttConfigChanged = newMqtt != mqttServer || newMqttPort != mqttPort ||
-                             newMqttUser != mqttUser || (newMqttPass != "******" && newMqttPass != mqttPass);
+    const bool mqttConfigChanged = newMqtt != oldMqttServer ||
+                                   newMqttPort != oldMqttPort ||
+                                   newMqttUser != oldMqttUser ||
+                                   (newMqttPass != "******" && newMqttPass != oldMqttPass);
     if (mqttConfigChanged) {
-        preferences.putString("mqtt", newMqtt);
-        preferences.putInt("mqttport", newMqttPort);
-        preferences.putString("mqttuser", newMqttUser);
-        if (newMqttPass != "******") {
-            preferences.putString("mqttpass", newMqttPass);
-        }
-        onMqttConfigChanged(newMqtt, newMqttPort, newMqttUser, newMqttPass != "******" ? newMqttPass : currentMqttPass);
+        onMqttConfigChanged(newMqtt, newMqttPort, newMqttUser, newMqttPass != "******" ? newMqttPass : oldMqttPass);
     }
 
     String cacheBuster = "/?v=" + String(millis());
@@ -243,7 +215,8 @@ void WebApi::onUpdatePostRequest(AsyncWebServerRequest *request) {
     }
 }
 
-void WebApi::onUpdatePostUpload(AsyncWebServerRequest *request, const String &filename, const size_t index, uint8_t *data,
+void WebApi::onUpdatePostUpload(AsyncWebServerRequest *request, const String &filename, const size_t index,
+                                uint8_t *data,
                                 const size_t len, const bool final) {
     if (index == 0U) {
         Update.begin();
@@ -302,7 +275,7 @@ void WebApi::onKeepAliveRequest(AsyncWebServerRequest *request) {
     const auto now = millis();
     const auto until = now + KEEPALIVE_TIMEOUT;
     LOG_DEBUG("Signal received at %lu", now);
-    request->send(200, "application/json","{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
+    request->send(200, "application/json", "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
     EventBus::instance().publish<API_KeepAliveEvent>(now);
 }
 
@@ -312,7 +285,6 @@ void WebApi::onDiagRequest(AsyncWebServerRequest *request) {
     LOG_INFO("%s", heap.c_str());
     Diagnostics::printGlobalHeapWatermark();
 }
-
 
 String WebApi::getImagesList() {
     String html = "<ul class='image-list'>";
