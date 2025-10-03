@@ -134,7 +134,6 @@ void ClockScreen::draw(lv_obj_t *screen) {
     time_label = lv_label_create(column_0);
     lv_obj_set_width(time_label, lv_pct(100));
     lv_label_set_text(time_label, "00:00:00");
-    lv_obj_set_height(time_label, 55);
     lv_obj_set_style_text_font(time_label, &lv_font_montserrat_48, 0);
     lv_obj_add_style(time_label, &label_white_center, 0);
 
@@ -166,7 +165,7 @@ void ClockScreen::draw(lv_obj_t *screen) {
     lv_obj_t *column_1 = column_create(row_1);
     lv_obj_set_width(column_1, 132);
     lv_obj_set_height(column_1, 60);
-    lv_obj_set_style_margin_top(column_1, 11, 0);
+    lv_obj_set_style_margin_top(column_1, 12, 0);
     lv_obj_set_flex_flow(column_1, LV_FLEX_FLOW_COLUMN);
     lv_obj_set_style_pad_row(column_1, 8, 0);
     lv_obj_set_flag(column_1, LV_OBJ_FLAG_SCROLLABLE, false);
@@ -179,7 +178,6 @@ void ClockScreen::draw(lv_obj_t *screen) {
     lv_obj_set_flex_grow(temp_min_label, 1);
     lv_obj_set_style_text_color(temp_min_label, lv_color_hex(0xFFFFFF), 0);
 
-
     temp_max_label = lv_label_create(column_1);
     lv_label_set_text(temp_max_label, "Max: 29.8°C");
     lv_obj_set_height(temp_max_label, 24);
@@ -187,7 +185,6 @@ void ClockScreen::draw(lv_obj_t *screen) {
     lv_obj_set_flex_grow(temp_max_label, 1);
     lv_obj_set_style_text_font(temp_max_label, &lv_font_montserrat_24, 0);
     lv_obj_set_style_text_color(temp_max_label, lv_color_hex(0xFFFFFF), 0);
-
 
     weather_icon = lv_image_create(row_1);
     lv_obj_set_size(weather_icon, 90, 90);
