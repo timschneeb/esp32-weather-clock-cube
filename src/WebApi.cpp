@@ -49,7 +49,8 @@ void WebApi::setOnMqttConfigChanged(const OnMqttConfigChangedCb &callback) {
 }
 
 void WebApi::onRootRequest(AsyncWebServerRequest *request) {
-    const auto *const config = &Settings::instance();
+    auto *const config = &Settings::instance();
+    config->load();
     String mode = config->mode;
     mode.toLowerCase();
     const bool isAlertChecked = mode.indexOf("alert") >= 0;
@@ -88,7 +89,7 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
     html.replace("{{weatherApiKey}}", config->weatherApiKey.load() != "" ? "******" : "");
     html.replace("{{weatherApiKey_exists}}", config->weatherApiKey.load() != "" ? "1" : "0");
     html.replace("{{weatherCity}}", config->weatherCity);
-    html.replace("{{timezone}}", String(config->timezone));
+    html.replace("{{timezoneName}}", String(config->timezone));
     html.replace("{{brightness}}", String(config->brightness));
     html.replace("{{totalBytes}}", String(SPIFFS.totalBytes() / 1024));
     html.replace("{{usedBytes}}", String(SPIFFS.usedBytes() / 1024));
