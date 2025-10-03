@@ -5,11 +5,39 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <atomic>
 #include <Preferences.h>
+#include <Arduino.h>
+#include <atomic>
 
 #include "utils/AtomicValue.h"
 #include "utils/Macros.h"
+
+/*
+ * X macro: type(name, default)
+ */
+#define SETTINGS_PROPERTIES(STRING,INT,FLOAT) \
+    STRING(ssid, "") \
+    STRING(pwd, "") \
+    STRING(mqtt, "") \
+    INT(mqttPort, 1883) \
+    STRING(mqttUser, "") \
+    STRING(mqttPass, "") \
+    STRING(fip, "") \
+    INT(fport, 5000) \
+    INT(displayDuration, 30) \
+    STRING(mode, "alert") \
+    STRING(weatherApiKey, "") \
+    STRING(weatherCity, "") \
+    STRING(weatherIcon, "") \
+    STRING(weatherDay, "") \
+    FLOAT(weatherHumidity, 0.0f) \
+    FLOAT(weatherTempDay, 0.0f) \
+    FLOAT(weatherTempMin, 0.0f) \
+    FLOAT(weatherTempMax, 0.0f) \
+    INT(maxImages, 10) \
+    INT(brightness, 100) \
+    STRING(timezone, "CET-1CEST,M3.5.0,M10.5.0/3") \
+    INT(slideshowInterval, 3000)
 
 class Settings {
     SINGLETON(Settings)
@@ -17,37 +45,17 @@ public:
     void load();
     void save();
 
-#define DECL_PRIMITIVE_PROPERTY(type, name) std::atomic<type> name;
-#define DECL_PROPERTY(type, name) AtomicValue<type> name;
-    DECL_PROPERTY(String, ssid)
-    DECL_PROPERTY(String, pwd)
-    DECL_PROPERTY(String, mqtt)
-    DECL_PRIMITIVE_PROPERTY(int, mqttPort)
-    DECL_PROPERTY(String, mqttUser)
-    DECL_PROPERTY(String, mqttPass)
-    DECL_PROPERTY(String, fip)
-    DECL_PRIMITIVE_PROPERTY(int, fport)
-    DECL_PRIMITIVE_PROPERTY(int, displayDuration)
-    DECL_PROPERTY(String, mode)
-    DECL_PROPERTY(String, weatherApiKey)
-    DECL_PROPERTY(String, weatherCity)
-    DECL_PROPERTY(String, weatherIcon)
-    DECL_PROPERTY(String, weatherDay)
-    DECL_PRIMITIVE_PROPERTY(float, weatherHumidity)
-    DECL_PRIMITIVE_PROPERTY(float, weatherTempDay)
-    DECL_PRIMITIVE_PROPERTY(float, weatherTempMin)
-    DECL_PRIMITIVE_PROPERTY(float, weatherTempMax)
-    DECL_PRIMITIVE_PROPERTY(int, maxImages)
-    DECL_PRIMITIVE_PROPERTY(int, brightness)
-    DECL_PROPERTY(String, timezone)
-    DECL_PRIMITIVE_PROPERTY(int, slideshowInterval)
-#undef DECL_PROPERTY
-#undef DECL_PRIMITIVE_PROPERTY
+    // Member declarations
+#define DECL_STRING(name, def) AtomicValue<String> name;
+#define DECL_INT(name, def) std::atomic<int> name;
+#define DECL_FLOAT(name, def) std::atomic<float> name;
+    SETTINGS_PROPERTIES(DECL_STRING, DECL_INT, DECL_FLOAT)
+#undef DECL_FLOAT
+#undef DECL_INT
+#undef DECL_STRING
 
 private:
     Preferences preferences;
 };
 
-
-
-#endif //SETTINGS_H
+#endif // SETTINGS_H
