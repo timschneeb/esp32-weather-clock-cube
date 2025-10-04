@@ -508,10 +508,10 @@
 #define LV_OBJ_STYLE_CACHE      0
 
 /** Add `id` field to `lv_obj_t` */
-#define LV_USE_OBJ_ID           0
+#define LV_USE_OBJ_ID           1
 
 /**  Enable support widget names*/
-#define LV_USE_OBJ_NAME         0
+#define LV_USE_OBJ_NAME         1
 
 /** Automatically assign an ID when obj is created */
 #define LV_OBJ_ID_AUTO_ASSIGN   LV_USE_OBJ_ID
@@ -525,7 +525,7 @@
 #define LV_USE_OBJ_ID_BUILTIN   1
 
 /** Use obj property set/get API. */
-#define LV_USE_OBJ_PROPERTY 0
+#define LV_USE_OBJ_PROPERTY 1
 
 /** Enable property name support. */
 #define LV_USE_OBJ_PROPERTY_NAME 1

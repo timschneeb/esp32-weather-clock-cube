@@ -4,13 +4,13 @@
 #include <lvgl.h>
 
 #include "LvSPIFFS.h"
+#include "gui/gui.h"
 #include "services/DisplayService.h"
 
 static OnFlushCallback onFlushCallback;
 static std::atomic<bool> killed;
 
-LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {
-}
+LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {}
 
 void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     lv_log_register_print_cb(onLog);
@@ -18,6 +18,7 @@ void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     lv_init();
     lv_tick_set_cb(getTicks);
     lv_fs_spiffs_init();
+
     display = lv_display_create(width, height);
     lv_display_set_flush_cb(display, onFlush);
 
@@ -28,6 +29,7 @@ void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
     ASSERT_OR_PANIC(drawBuf2, "LVGL buffer 2 alloc failed");
 
     lv_display_set_buffers(display, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_FULL);
+    gui_init("S:/");
 }
 
 void LvglDisplayAdapter::setOnFlushCallback(const OnFlushCallback& callback) {

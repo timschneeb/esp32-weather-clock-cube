@@ -5,7 +5,7 @@
 
 class ApModeScreen final : public Screen {
 public:
-    void draw(lv_obj_t* screen) override;
+    ApModeScreen();
 };
 
 #endif //APMODESCREEN_H

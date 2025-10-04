@@ -1,0 +1,11 @@
+<component>
+	<api>
+		<prop name="text" type="string" default="settings" />
+	</api>
+	<styles>
+		<style name="main0" text_font="montserrat_14_c_array" />
+	</styles>
+	<view extends="lv_label" text="$text">
+		<style name="main0" />
+	</view>
+</component>

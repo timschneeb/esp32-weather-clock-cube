@@ -1,9 +1,7 @@
 #include "ErrorScreen.h"
 
-ErrorScreen::ErrorScreen(const String& message) : message(message) {}
-
-void ErrorScreen::draw(lv_obj_t* screen) {
-    _screen = screen;
+ErrorScreen::ErrorScreen(const String& message) {
+    _screen = lv_obj_create(nullptr);
     lv_obj_set_style_bg_color(_screen, lv_color_hex(0x000000), LV_STATE_DEFAULT);
 
     lv_obj_t* label = lv_label_create(_screen);

@@ -6,7 +6,7 @@
 
 class ClockScreen final : public Screen {
 public:
-    void draw(lv_obj_t* screen) override;
+    ClockScreen();
     void update() override;
 
 private:

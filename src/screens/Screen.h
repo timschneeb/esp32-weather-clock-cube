@@ -5,9 +5,9 @@
 
 class Screen {
 public:
-    virtual ~Screen() = default;
-    virtual void draw(lv_obj_t* screen) = 0;
-    virtual void update() {};
+    virtual ~Screen() { lv_obj_delete_async(_screen); } // TODO: test this
+    virtual void update() {}
+    lv_obj_t* root() const { return _screen; }
 protected:
     lv_obj_t *_screen = nullptr;
 };

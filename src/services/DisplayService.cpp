@@ -44,12 +44,11 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
     currentScreen = std::move(newScreen);
-    lv_obj_t* scr = lv_obj_create(nullptr);
+    lv_obj_t* scr = currentScreen->root();
     lv_obj_set_flag(scr, LV_OBJ_FLAG_SCROLLABLE, false);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_max_height(scr, 240, LV_STATE_ANY);
     lv_obj_set_style_max_width(scr, 240, LV_STATE_ANY);
-    currentScreen->draw(scr);
     lv_screen_load(scr);
 
     screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
