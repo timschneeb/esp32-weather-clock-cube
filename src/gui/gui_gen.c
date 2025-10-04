@@ -129,7 +129,7 @@ void gui_init_gen(const char * asset_path)
     img_bluetooth = lv_strdup(buf);
     lv_snprintf(buf, 256, "%s%s", asset_path, "images/bell-solid.png");
     img_bell = lv_strdup(buf);
-    lv_snprintf(buf, 256, "%s%s", asset_path, "images/weather/02d.jpg");
+    lv_snprintf(buf, 256, "%s%s", asset_path, "images/weather/02d.png");
     img_weather_02d = lv_strdup(buf);
 
     /*----------------

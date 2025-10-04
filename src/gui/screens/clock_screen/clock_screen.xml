@@ -59,7 +59,8 @@
 					width="90"
 					height="90"
 					align="bottom_right"
-					style_margin_top="-3"
+					style_margin_top="-7"
+					style_margin_left="-7"
 					src="img_weather_02d"
 				/>
 			</row>

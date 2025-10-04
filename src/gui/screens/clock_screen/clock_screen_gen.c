@@ -143,7 +143,8 @@ lv_obj_t * clock_screen_create(void)
     lv_obj_set_width(weather_icon, 90);
     lv_obj_set_height(weather_icon, 90);
     lv_obj_set_align(weather_icon, LV_ALIGN_BOTTOM_RIGHT);
-    lv_obj_set_style_margin_top(weather_icon, -3, 0);
+    lv_obj_set_style_margin_top(weather_icon, -7, 0);
+    lv_obj_set_style_margin_left(weather_icon, -7, 0);
     lv_image_set_src(weather_icon, img_weather_02d);
 
     LV_TRACE_OBJ_CREATE("finished");

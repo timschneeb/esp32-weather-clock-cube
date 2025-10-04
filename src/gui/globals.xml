@@ -3,14 +3,12 @@
 		<file name="img_wifi" src_path="images/wifi-solid.png" />
 		<file name="img_bluetooth" src_path="images/bluetooth-brands.png" />
 		<file name="img_bell" src_path="images/bell-solid.png" />
-		<file name="img_weather_02d" src_path="images/weather/02d.jpg" />
+		<file name="img_weather_02d" src_path="images/weather/02d.png" />
 	</images>
-
 	<subjects>
 		<int name="hours" value="17" />
 		<int name="mins" value="45" />
 	</subjects>
-
 	<fonts>
 		<!-- C array fonts for LVGL -->
 		<bin
@@ -20,7 +18,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="14"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_20_c_array"
@@ -29,7 +27,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="20"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_28_c_array"
@@ -38,7 +36,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="28"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_22_c_array"
@@ -47,7 +45,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="22"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_24_c_array"
@@ -56,7 +54,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="24"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_32_c_array"
@@ -65,7 +63,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="32"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_30_c_array"
@@ -74,7 +72,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="30"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 		<bin
 			name="montserrat_48_c_array"
@@ -83,7 +81,7 @@
 			src_path="fonts/Montserrat_Medium.ttf"
 			size="48"
 			range="0x20-0x7f"
-			symbols="°"
+			symbols="&#xB0;"
 		/>
 	</fonts>
 </globals>
