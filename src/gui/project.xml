@@ -1,7 +1,13 @@
 <project>
-    <targets>
-        <target name="small">
-            <display width="240" height="240" color_format="rgb565"/>
-        </target>
-    </targets>
+	<targets>
+		<target name="small">
+			<display width="240" height="240" color_format="rgb565" />
+		</target>
+		<target name="hd">
+			<display width="1280" height="720" color_format="rgb565" />
+		</target>
+		<target name="hd_port">
+			<display width="720" height="1280" color_format="rgb565" />
+		</target>
+	</targets>
 </project>
