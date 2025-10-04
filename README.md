@@ -28,6 +28,11 @@ pio run -t uploadfs     # Upload SPIFFS flash image
 pio run -t upload       # Upload firmware
 ```
 
+### UI development
+
+When adding or changing XML markup files in `src/gui`, you must re-generate the C sources in that folder using LVGL-Editor or their CLI.
+Do not edit the generated files directly (file name ending in `_gen`).
+
 ### Wokwi Simulator support
 
 This project can be run in the [Wokwi simulator](https://wokwi.com/). Note that the simulator is much slower than the real hardware, so the display updates will be slow.
