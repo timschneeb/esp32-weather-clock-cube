@@ -19,9 +19,9 @@ void Settings::load() {
 
 void Settings::save() {
     preferences.begin("config", false);
-#define S_STRING(name, def) preferences.putString(#name, def);
-#define S_INT(name, def) preferences.putInt(#name, def);
-#define S_FLOAT(name, def) preferences.putFloat(#name, def);
+#define S_STRING(name, def) preferences.putString(#name, name);
+#define S_INT(name, def) preferences.putInt(#name, name);
+#define S_FLOAT(name, def) preferences.putFloat(#name, name);
     FOR_EACH_PROPERTY(S_STRING, S_INT, S_FLOAT)
     preferences.end();
 }

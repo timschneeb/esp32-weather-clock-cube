@@ -83,7 +83,7 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
     html.replace("{{fport}}", String(config->fport));
     html.replace("{{sec}}", String(config->displayDuration));
     html.replace("{{maxImages}}", String(config->maxImages));
-    html.replace("{{slideshowInterval}}", String(config->slideshowInterval));
+    html.replace("{{slideshowInterval}}", String(config->slideshowSec));
     html.replace("{{alertCheckbox}}", alertCheckbox);
     html.replace("{{detectionCheckbox}}", detectionCheckbox);
     html.replace("{{weatherApiKey}}", config->weatherApiKey.load() != "" ? "******" : "");
@@ -139,7 +139,7 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
 
     settings->displayDuration = getIntParam(request, "sec", 30, 1);
     settings->maxImages = getIntParam(request, "maxImages", 0, 1, 60);
-    settings->slideshowInterval = getIntParam(request, "slideInterval", 0, 500, 20000);
+    settings->slideshowSec = getIntParam(request, "slideInterval", 0, 500, 20000);
 
     // Modes
     String modeValue = "";
@@ -190,6 +190,8 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
     if (mqttConfigChanged) {
         onMqttConfigChanged(newMqtt, newMqttPort, newMqttUser, newMqttPass != "******" ? newMqttPass : oldMqttPass);
     }
+
+    Settings::instance().save();
 
     String cacheBuster = "/?v=" + String(millis());
     request->redirect(cacheBuster);

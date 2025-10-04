@@ -16,6 +16,8 @@
  * X macro: type(name, default)
  * List of all properties with their types and default values.
  * Used to generate member declarations, load and save methods.
+ *
+ * NOTE: ESP32 NVS keys are limited to 15 characters.
  */
 #define FOR_EACH_PROPERTY(STRING,INT,FLOAT) \
     STRING(ssid, "") \
@@ -39,7 +41,7 @@
     INT(maxImages, 10) \
     INT(brightness, 100) \
     STRING(timezone, "CET-1CEST,M3.5.0,M10.5.0/3") \
-    INT(slideshowInterval, 3000)
+    INT(slideshowSec, 3000)
 
 class Settings {
     SINGLETON(Settings)

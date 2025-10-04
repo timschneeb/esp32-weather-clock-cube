@@ -2,9 +2,6 @@
 #include <esp_sntp.h>
 #include <SPIFFS.h>
 
-// ReSharper disable once CppUnusedIncludeDirective
-#include <AsyncHTTPRequest_Generic.h> // Library doesn't handle multiple includes well, needs to be included here
-
 #include "Config.h"
 #include "Settings.h"
 #include "services/DebugService.h"
