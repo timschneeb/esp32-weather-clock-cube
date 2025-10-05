@@ -52,10 +52,7 @@ void setup() {
     esp_sntp_set_sync_interval(3600 * 1000); // Sync every hour
     // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
-        const String timezone = Settings::instance().timezone;
-        LOG_INFO("Setting Timezone to %s\n", timezone.c_str());
-        setenv("TZ", timezone.c_str(), 1);
-        tzset();
+        Environment::setTimezone(Settings::instance().timezone);
     });
     configTime(0, 0, SNTP_SERVER);
 

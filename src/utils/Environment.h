@@ -24,6 +24,12 @@ namespace Environment {
             LOG_INFO("Detected Wokwi emulator environment");
         return _isWokwiCache;
     }
+
+    inline void setTimezone(const String& timezone) {
+        LOG_INFO("Setting Timezone to %s\n", timezone.c_str());
+        setenv("TZ", timezone.c_str(), 1);
+        tzset();
+    }
 }
 
 #endif //GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_ENVIRONMENT_H

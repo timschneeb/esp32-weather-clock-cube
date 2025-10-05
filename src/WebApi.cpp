@@ -17,6 +17,7 @@
 #include "event/EventBus.h"
 #include "event/Events.h"
 #include "utils/Diagnostics.h"
+#include "utils/Environment.h"
 #include "utils/Macros.h"
 
 using namespace ArduinoJson;
@@ -173,10 +174,7 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
 
     if (oldTimezone != settings->timezone.load()) {
         // Timezone changed, update system timezone
-        // TODO: Duplicated, create util class
-        LOG_INFO("Setting Timezone to %s\n", settings->timezone.load().c_str());
-        setenv("TZ", settings->timezone.load().c_str(), 1);
-        tzset();
+        Environment::setTimezone(settings->timezone);
     }
 
     if (oldBrightness != settings->brightness.load()) {
