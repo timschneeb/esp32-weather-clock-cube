@@ -28,6 +28,21 @@ void HTTPRequest::startRequest(const String& url, const uint32_t retryCount, con
     xTaskCreatePinnedToCore(requestTask, String("HTTP@" + String(requestCount++)).c_str(), 4096, this, 1, &_taskHandle, 1);
 }
 
+String HTTPRequest::encodeUrl(const String &value) {
+    String escaped = "";
+    for (const char c : value) {
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            escaped += c;
+        } else {
+            const auto hex = "0123456789ABCDEF";
+            escaped += '%';
+            escaped += hex[(c >> 4) & 0xF];
+            escaped += hex[c & 0xF];
+        }
+    }
+    return escaped;
+}
+
 void HTTPRequest::requestTask(void* pvParameters) {
     auto* self = static_cast<HTTPRequest*>(pvParameters);
     self->runRequest();
@@ -37,6 +52,8 @@ void HTTPRequest::requestTask(void* pvParameters) {
 }
 
 void HTTPRequest::runRequest() {
+    String encodedUrl = encodeUrl(_url);
+
     for (_attempt = 1; _attempt <= _retryCount; ++_attempt) {
         if (!NetworkService::isConnected()) {
             LOG_ERROR("Network disconnected, aborting request...");
@@ -46,7 +63,7 @@ void HTTPRequest::runRequest() {
             return;
         }
         esp_http_client_config_t config = {};
-        config.url = _url.c_str();
+        config.url = encodedUrl.c_str();
         config.timeout_ms = _timeoutMs;
         config.method = HTTP_METHOD_GET;
         config.buffer_size = 512;
@@ -67,7 +84,7 @@ void HTTPRequest::runRequest() {
             payload.reserve(content_length > 0 ? content_length : 512);
             char buffer[256];
             int read_len = 0;
-            esp_http_client_set_url(_client, _url.c_str());
+            esp_http_client_set_url(_client, encodedUrl.c_str());
             esp_http_client_open(_client, 0);
             while ((read_len = esp_http_client_read(_client, buffer, sizeof(buffer)-1)) > 0) {
                 buffer[read_len] = 0;
