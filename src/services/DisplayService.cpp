@@ -148,7 +148,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                 case EventId::WEB_MqttDisconnected: {
                     const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
                     if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
-                        changeScreen(std::unique_ptr<Screen>(new ErrorScreen("MQTT Disconnected")), 50);
+                        showOverlay("MQTT disconnected", 3000);
                     }
                     break;
                 }
@@ -169,7 +169,6 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
         if (isWaitingForTimeSync && Environment::isTimeSynchronized()) {
             isWaitingForTimeSync = false;
             changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
-            showOverlay("Time synchronized", 2000);
         }
 
         if (currentScreen) {
