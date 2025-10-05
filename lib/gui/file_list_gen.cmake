@@ -1,19 +1,20 @@
 list(
   APPEND
   PROJECT_SOURCES
-        components/column/column_gen.c
-        components/header/header_gen.c
-        components/row/row_gen.c
-        components/subtitle/subtitle_gen.c
-        components/title/title_gen.c
-        screens/clock_screen/clock_screen_gen.c
-        gui_gen.c
-        gui.c
-        fonts/montserrat_14_c_array_data.c
-        fonts/montserrat_22_c_array_data.c
-        fonts/montserrat_28_c_array_data.c
-        fonts/montserrat_22_c_array_data.c
-        fonts/montserrat_24_c_array_data.c
-        fonts/montserrat_32_c_array_data.c
-        fonts/montserrat_30_c_array_data.c
-        fonts/montserrat_48_c_array_data.c)
+  ${CMAKE_CURRENT_LIST_DIR}/components/column/column_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/components/header/header_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/components/row/row_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/components/subtitle/subtitle_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/components/title/title_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/clock_screen/clock_screen_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/screens/loading_screen/loading_screen_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/gui_gen.c
+  ${CMAKE_CURRENT_LIST_DIR}/gui.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_14_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_22_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_28_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_22_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_24_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_32_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_30_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_48_c_array_data.c)

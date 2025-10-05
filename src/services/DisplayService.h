@@ -35,7 +35,8 @@ private:
     LvglDisplayAdapter lvglAdapter;
 
     std::unique_ptr<Screen> currentScreen;
-    
+
+    bool isWaitingForTimeSync = false;
     unsigned long lastKeepaliveTime = 0;
     unsigned long screenTimeout = 0;
     unsigned long screenSince = 0;

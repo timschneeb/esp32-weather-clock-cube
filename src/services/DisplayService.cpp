@@ -20,7 +20,10 @@
 #include "../screens/ErrorScreen.h"
 #include "../screens/ImageScreen.h"
 #include "../screens/Screen.h"
+#include "screens/DebugScreen.h"
+#include "screens/LoadingScreen.h"
 #include "utils/Diagnostics.h"
+#include "utils/Environment.h"
 
 DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
@@ -45,6 +48,17 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     }
 }
 
+
+static void anim_x_cb(void * var, int32_t v)
+{
+    lv_obj_set_x((lv_obj_t *) var, v);
+}
+
+static void anim_size_cb(void * var, int32_t v)
+{
+    lv_obj_set_size((lv_obj_t *) var, v, v);
+}
+
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
     // Old Screen object is implicitly deleted here
     currentScreen = std::move(newScreen);
@@ -53,7 +67,7 @@ void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsig
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_max_height(scr, 240, LV_STATE_ANY);
     lv_obj_set_style_max_width(scr, 240, LV_STATE_ANY);
-    lv_screen_load_anim(scr, LV_SCR_LOAD_ANIM_NONE, 0, 0, true);
+    lv_screen_load_anim(scr, LV_SCR_LOAD_ANIM_NONE, 300, 0, true);
 
     screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
     screenSince = millis();
@@ -61,13 +75,13 @@ void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsig
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
     lv_obj_t* label = lv_label_create(lv_layer_top());
-    lv_obj_set_style_pad_all(label, 0, 0);
-    lv_obj_set_style_margin_hor(label, 8, 0);
+    lv_obj_set_style_pad_all(label, 0, LV_STATE_DEFAULT);
+    lv_obj_set_style_margin_hor(label, 8, LV_STATE_DEFAULT);
     lv_label_set_text(label, message.c_str());
     lv_label_set_long_mode(label, LV_LABEL_LONG_MODE_WRAP);
     lv_obj_set_style_bg_opa(label, LV_OPA_COVER, 0);
-    lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), 0);
-    lv_obj_set_style_bg_color(label, lv_color_hex(0x444444), 0);
+    lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(label, lv_color_hex(0x444444), LV_STATE_DEFAULT);
     lv_obj_align(label, LV_ALIGN_BOTTOM_MID, 0, -10);
     lv_obj_delete_delayed(label, duration);
 }
@@ -96,7 +110,13 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
     eventBus.subscribe(EventId::CFG_BrightnessUpdated, displayEventQueue);
 
-    changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+    // changeScreen(std::unique_ptr<Screen>(new DebugScreen()), 0);
+
+    if (!NetworkService::isConnected()) {
+        changeScreen(std::unique_ptr<Screen>(new LoadingScreen("Connecting...")), 0);
+    } else {
+        changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+    }
 
     for (;;) {
         if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
@@ -105,6 +125,13 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     changeScreen(std::unique_ptr<Screen>(new ApModeScreen()), 60);
                     break;
                 case EventId::NET_StaConnected:
+                    // Wait for SNTP time sync if not done yet
+                    if (!Environment::isTimeSynchronized()) {
+                        isWaitingForTimeSync = true;
+                        changeScreen(std::unique_ptr<Screen>(new LoadingScreen("Syncing time...")), 60);
+                    } else {
+                        changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+                    }
                     showOverlay("WiFi connected", 3000);
                 case EventId::API_KeepAlive:
                     if (!backlight.isSleepingByPowerButton()) {
@@ -137,6 +164,12 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                 default:
                     break;
             }
+        }
+
+        if (isWaitingForTimeSync && Environment::isTimeSynchronized()) {
+            isWaitingForTimeSync = false;
+            changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
+            showOverlay("Time synchronized", 2000);
         }
 
         if (currentScreen) {

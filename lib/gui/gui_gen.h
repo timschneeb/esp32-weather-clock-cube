@@ -110,6 +110,7 @@ void gui_init_gen(const char * asset_path);
 #include "components/subtitle/subtitle_gen.h"
 #include "components/title/title_gen.h"
 #include "screens/clock_screen/clock_screen_gen.h"
+#include "screens/loading_screen/loading_screen_gen.h"
 
 #ifdef __cplusplus
 } /*extern "C"*/

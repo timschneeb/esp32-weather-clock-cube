@@ -29,11 +29,7 @@ bool NetworkService::isConnected() {
 [[noreturn]] void NetworkService::run() {
     for (;;) {
         // If initial time sync hasn't completed yet, retry
-        if (isConnected() && !isInApMode() &&
-            time(nullptr) < 100000 &&
-            sntp_get_sync_status() != SNTP_SYNC_STATUS_COMPLETED &&
-            sntp_get_sync_status() != SNTP_SYNC_STATUS_IN_PROGRESS) {
-
+        if (isConnected() && !isInApMode() && !Environment::isTimeSynchronized()) {
             LOG_DEBUG("Restarting SNTP time sync...");
             configTime(0, 0, SNTP_SERVER);
         }

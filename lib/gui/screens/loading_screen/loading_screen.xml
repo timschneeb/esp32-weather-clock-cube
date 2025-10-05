@@ -1,0 +1,28 @@
+<screen>
+	<styles>
+		<style name="root" pad_all="0" border_width="0" layout="flex" flex_flow="column" pad_row="0" />
+		<style
+			name="label_current_weather"
+			text_color="0xFFFFFF"
+			text_font="montserrat_32_c_array"
+			text_align="center"
+		/>
+	</styles>
+	<view width="100%" height="100%" style_bg_color="0x000000" scrollable="false">
+		<style name="root" />
+		<column
+			width="100%"
+			height="100%"
+			style_pad_row="12"
+			flex_flow="column"
+			style_flex_main_place="center"
+			style_flex_cross_place="center"
+			scrollable="false"
+		>
+			<lv_arc height="50" width="50" />
+			<lv_label name="text" width="100%" text="Loading..." style_text_font="montserrat_22_c_array">
+				<style name="label_white_center" />
+			</lv_label>
+		</column>
+	</view>
+</screen>

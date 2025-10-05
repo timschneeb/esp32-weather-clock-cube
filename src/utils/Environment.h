@@ -6,6 +6,7 @@
 #define GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_ENVIRONMENT_H
 
 #include <Arduino.h>
+#include <esp_sntp.h>
 
 #include "utils/Macros.h"
 
@@ -29,6 +30,10 @@ namespace Environment {
         LOG_INFO("Setting Timezone to %s\n", timezone.c_str());
         setenv("TZ", timezone.c_str(), 1);
         tzset();
+    }
+
+    inline bool isTimeSynchronized() {
+        return time(nullptr) >= 1000000000 && sntp_get_sync_status() != SNTP_SYNC_STATUS_IN_PROGRESS;
     }
 }
 
