@@ -39,8 +39,6 @@ extern "C" {
  * Permanent screens
  *------------------*/
 
-extern lv_obj_t * clock_screen;
-
 /*----------------
  * Global styles
  *----------------*/

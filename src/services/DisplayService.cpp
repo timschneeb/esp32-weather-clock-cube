@@ -20,6 +20,7 @@
 #include "../screens/ErrorScreen.h"
 #include "../screens/ImageScreen.h"
 #include "../screens/Screen.h"
+#include "utils/Diagnostics.h"
 
 DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
@@ -37,19 +38,22 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
 
     const auto footer = line > 0 ? String(func) + "+" + String(line) : String(func) + "\nin " + String(file);
     tft.panic(msg, footer.c_str());
+
+    Diagnostics::printHeapUsageSafely();
     while (true) {
         vTaskDelay(portMAX_DELAY);
     }
 }
 
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
+    // Old Screen object is implicitly deleted here
     currentScreen = std::move(newScreen);
     lv_obj_t* scr = currentScreen->root();
     lv_obj_set_flag(scr, LV_OBJ_FLAG_SCROLLABLE, false);
     lv_obj_set_scrollbar_mode(scr, LV_SCROLLBAR_MODE_OFF);
     lv_obj_set_style_max_height(scr, 240, LV_STATE_ANY);
     lv_obj_set_style_max_width(scr, 240, LV_STATE_ANY);
-    lv_screen_load(scr);
+    lv_screen_load_anim(scr, LV_SCR_LOAD_ANIM_NONE, 0, 0, true);
 
     screenTimeout = timeoutSec == 0 ? 0 : timeoutSec * 1000UL;
     screenSince = millis();
@@ -98,7 +102,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
         if (EventPtr event = EventBus::tryReceive(displayEventQueue); event != nullptr) {
             switch (event->id()) {
                 case EventId::NET_ApCreated:
-                    changeScreen(std::unique_ptr<Screen>(new ApModeScreen()), 86400);
+                    changeScreen(std::unique_ptr<Screen>(new ApModeScreen()), 60);
                     break;
                 case EventId::NET_StaConnected:
                     showOverlay("WiFi connected", 3000);

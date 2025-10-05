@@ -55,8 +55,7 @@ lv_obj_t * clock_screen_create(void)
         style_inited = true;
     }
 
-    if (clock_screen == NULL) clock_screen = lv_obj_create(NULL);
-    lv_obj_t * lv_obj_0 = clock_screen;
+    lv_obj_t * lv_obj_0 = lv_obj_create(NULL);
     lv_obj_set_width(lv_obj_0, lv_pct(100));
     lv_obj_set_height(lv_obj_0, lv_pct(100));
     lv_obj_set_style_bg_color(lv_obj_0, lv_color_hex(0x000000), 0);

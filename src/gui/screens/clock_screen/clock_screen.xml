@@ -1,4 +1,4 @@
-<screen permanent="true">
+<screen>
 	<styles>
 		<style name="root" pad_all="0" border_width="0" layout="flex" flex_flow="column" pad_row="0" />
 		<style

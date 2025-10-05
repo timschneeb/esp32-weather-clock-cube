@@ -39,8 +39,6 @@
  *  Permanent screens
  *-------------------*/
 
-lv_obj_t * clock_screen = NULL;
-
 /*----------------
  * Global styles
  *----------------*/
@@ -190,10 +188,6 @@ void gui_init_gen(const char * asset_path)
      *-------------------*/
     /* If XML is enabled it's assumed that the permanent screens are created
      * manaully from XML using lv_xml_create() */
-    /* To allow screens to reference each other, create them all before calling the sceen create functions */
-    clock_screen = lv_obj_create(NULL);
-
-    clock_screen_create();
 #endif
 }
 
