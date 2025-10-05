@@ -94,7 +94,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::WEB_ShowImageFromUrlWithZone, displayEventQueue);
     eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
-    eventBus.subscribe(EventId::CFG_WeatherUpdated, displayEventQueue);
+    eventBus.subscribe(EventId::CFG_BrightnessUpdated, displayEventQueue);
 
     changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
 
@@ -129,8 +129,10 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     changeScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
                     break;
                 case EventId::CFG_Updated:
-                case EventId::CFG_WeatherUpdated:
                     showOverlay("Data updated", 10000);
+                    break;
+                case EventId::CFG_BrightnessUpdated:
+                    backlight.setBrightness(event->to<CFG_BrightnessUpdatedEvent>()->brightness());
                     break;
                 default:
                     break;

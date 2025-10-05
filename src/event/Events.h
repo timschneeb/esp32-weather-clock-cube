@@ -31,7 +31,7 @@ MAKE_NAMED_ENUM_CLASS(EventId,
 
     /* Settings */
     CFG_Updated,
-    CFG_WeatherUpdated
+    CFG_BrightnessUpdated
 );
 
 class IEvent {
@@ -65,6 +65,6 @@ REGISTER_EVENT(WEB_ShowLocalImage, (String, filename));
 REGISTER_EVENT_NOARGS(WEA_ForecastUpdated);
 
 REGISTER_EVENT_NOARGS(CFG_Updated);
-REGISTER_EVENT_NOARGS(CFG_WeatherUpdated);
+REGISTER_EVENT(CFG_BrightnessUpdated, (int, brightness));
 
 #endif //EVENTS_H

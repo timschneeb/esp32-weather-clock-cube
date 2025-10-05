@@ -14,23 +14,23 @@
             <div class="card">
                 <h3>Settings</h3>
                 <form method="POST" action="/save">
-                    <label for="ssid">WiFi SSID</label>
+                    <label for="ssid">WiFi SSID*</label>
                     <input type="text" id="ssid" name="ssid" value="{{ssid}}" required>
 
-                    <label for="pwd">WiFi Password</label>
+                    <label for="pwd">WiFi Password*</label>
                     <input type="password" id="pwd" name="pwd" value="{{pwd}}">
                     <input type="hidden" name="pwd_exists" value="{{pwd_exists}}">
 
-                    <label for="mqtt">MQTT Server IP</label>
+                    <label for="mqtt">MQTT Server IP*</label>
                     <input type="text" id="mqtt" name="mqtt" value="{{mqtt}}">
 
-                    <label for="mqttport">MQTT Port</label>
+                    <label for="mqttport">MQTT Port*</label>
                     <input type="number" id="mqttport" name="mqttport" min="1" max="65535" value="{{mqttport}}">
 
-                    <label for="mqttuser">MQTT Username</label>
+                    <label for="mqttuser">MQTT Username*</label>
                     <input type="text" id="mqttuser" name="mqttuser" value="{{mqttuser}}">
 
-                    <label for="mqttpass">MQTT Password</label>
+                    <label for="mqttpass">MQTT Password*</label>
                     <input type="password" id="mqttpass" name="mqttpass" value="{{mqttpass}}">
                     <input type="hidden" name="mqttpass_exists" value="{{mqttpass_exists}}">
 
@@ -70,6 +70,8 @@
                         <input type="range" id="brightness" name="brightness" min="0" max="255" value="{{brightness}}" oninput="updateBrightnessOutput(this.value)">
                         <output id="brightnessValue">{{brightness}}</output>
                     </div>
+
+                    <div>*To apply changes to any WiFi and MQTT setting, a reboot is required.</div>
 
                     <button type="submit">Save</button>
                 </form>

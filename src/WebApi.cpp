@@ -162,13 +162,26 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
     bool apiKeyExists = request->getParam("weatherApiKey_exists", true)->value() == "1";
     if (!apiKeyExists || newApiKey != "******") {
         settings->weatherApiKey = newApiKey;
-        EventBus::instance().publish<CFG_WeatherUpdatedEvent>();
     }
 
     settings->weatherCity = request->getParam("weatherCity", true)->value();
 
+    auto oldTimezone = settings->timezone.load();
+    auto oldBrightness = settings->brightness.load();
     settings->timezone = request->getParam("timezoneName", true)->value();
     settings->brightness = getIntParam(request, "brightness", 0, 0, 255);
+
+    if (oldTimezone != settings->timezone.load()) {
+        // Timezone changed, update system timezone
+        // TODO: Duplicated, create util class
+        LOG_INFO("Setting Timezone to %s\n", settings->timezone.load().c_str());
+        setenv("TZ", settings->timezone.load().c_str(), 1);
+        tzset();
+    }
+
+    if (oldBrightness != settings->brightness.load()) {
+        EventBus::instance().publish<CFG_BrightnessUpdatedEvent>(settings->brightness.load());
+    }
 
     // MQTT
     String newMqtt, newMqttUser, newMqttPass;
