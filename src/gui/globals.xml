@@ -3,12 +3,15 @@
 		<file name="img_wifi" src_path="images/wifi-solid.png" />
 		<file name="img_bluetooth" src_path="images/bluetooth-brands.png" />
 		<file name="img_bell" src_path="images/bell-solid.png" />
-		<file name="img_weather_02d" src_path="images/weather/02d.png" />
+		<file name="img_weather_placeholder" src_path="images/weather/04d.png" />
 	</images>
 	<subjects>
 		<int name="hours" value="17" />
 		<int name="mins" value="45" />
 	</subjects>
+	<styles>
+		<style name="label_white_center" text_align="center" text_color="0xFFFFFF" />
+	</styles>
 	<fonts>
 		<!-- C array fonts for LVGL -->
 		<bin
@@ -21,11 +24,11 @@
 			symbols="&#xB0;"
 		/>
 		<bin
-			name="montserrat_20_c_array"
+			name="montserrat_22_c_array"
 			as_file="false"
 			bpp="2"
 			src_path="fonts/Montserrat_Medium.ttf"
-			size="20"
+			size="22"
 			range="0x20-0x7f"
 			symbols="&#xB0;"
 		/>

@@ -1,7 +1,7 @@
 <component>
 	<styles>
 		<style
-			name="main0"
+			name="root"
 			bg_opa="0"
 			border_width="0"
 			pad_all="0"
@@ -13,6 +13,6 @@
 		/>
 	</styles>
 	<view>
-		<style name="main0" />
+		<style name="root" />
 	</view>
 </component>

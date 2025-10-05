@@ -45,14 +45,16 @@ lv_obj_t * clock_screen = NULL;
  * Global styles
  *----------------*/
 
+lv_style_t label_white_center;
+
 /*----------------
  * Fonts
  *----------------*/
 
 lv_font_t * montserrat_14_c_array;
 extern lv_font_t montserrat_14_c_array_data;
-lv_font_t * montserrat_20_c_array;
-extern lv_font_t montserrat_20_c_array_data;
+lv_font_t * montserrat_22_c_array;
+extern lv_font_t montserrat_22_c_array_data;
 lv_font_t * montserrat_28_c_array;
 extern lv_font_t montserrat_28_c_array_data;
 lv_font_t * montserrat_22_c_array;
@@ -73,7 +75,7 @@ extern lv_font_t montserrat_48_c_array_data;
 const void * img_wifi;
 const void * img_bluetooth;
 const void * img_bell;
-const void * img_weather_02d;
+const void * img_weather_placeholder;
 
 /*----------------
  * Subjects
@@ -98,14 +100,24 @@ void gui_init_gen(const char * asset_path)
      * Global styles
      *----------------*/
 
+    static bool style_inited = false;
+
+    if (!style_inited) {
+        lv_style_init(&label_white_center);
+        lv_style_set_text_align(&label_white_center, LV_TEXT_ALIGN_CENTER);
+        lv_style_set_text_color(&label_white_center, lv_color_hex(0xFFFFFF));
+
+        style_inited = true;
+    }
+
     /*----------------
      * Fonts
      *----------------*/
 
     /* get font 'montserrat_14_c_array' from a C array */
     montserrat_14_c_array = &montserrat_14_c_array_data;
-    /* get font 'montserrat_20_c_array' from a C array */
-    montserrat_20_c_array = &montserrat_20_c_array_data;
+    /* get font 'montserrat_22_c_array' from a C array */
+    montserrat_22_c_array = &montserrat_22_c_array_data;
     /* get font 'montserrat_28_c_array' from a C array */
     montserrat_28_c_array = &montserrat_28_c_array_data;
     /* get font 'montserrat_22_c_array' from a C array */
@@ -129,8 +141,8 @@ void gui_init_gen(const char * asset_path)
     img_bluetooth = lv_strdup(buf);
     lv_snprintf(buf, 256, "%s%s", asset_path, "images/bell-solid.png");
     img_bell = lv_strdup(buf);
-    lv_snprintf(buf, 256, "%s%s", asset_path, "images/weather/02d.png");
-    img_weather_02d = lv_strdup(buf);
+    lv_snprintf(buf, 256, "%s%s", asset_path, "images/weather/04d.png");
+    img_weather_placeholder = lv_strdup(buf);
 
     /*----------------
      * Subjects
@@ -147,7 +159,7 @@ void gui_init_gen(const char * asset_path)
 
     /* Register fonts */
     lv_xml_register_font(NULL, "montserrat_14_c_array", montserrat_14_c_array);
-    lv_xml_register_font(NULL, "montserrat_20_c_array", montserrat_20_c_array);
+    lv_xml_register_font(NULL, "montserrat_22_c_array", montserrat_22_c_array);
     lv_xml_register_font(NULL, "montserrat_28_c_array", montserrat_28_c_array);
     lv_xml_register_font(NULL, "montserrat_22_c_array", montserrat_22_c_array);
     lv_xml_register_font(NULL, "montserrat_24_c_array", montserrat_24_c_array);
@@ -169,7 +181,7 @@ void gui_init_gen(const char * asset_path)
     lv_xml_register_image(NULL, "img_wifi", img_wifi);
     lv_xml_register_image(NULL, "img_bluetooth", img_bluetooth);
     lv_xml_register_image(NULL, "img_bell", img_bell);
-    lv_xml_register_image(NULL, "img_weather_02d", img_weather_02d);
+    lv_xml_register_image(NULL, "img_weather_placeholder", img_weather_placeholder);
 #endif
 
 #if LV_USE_XML == 0

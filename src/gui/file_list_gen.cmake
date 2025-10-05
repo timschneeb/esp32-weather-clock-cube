@@ -10,7 +10,7 @@ list(
   ${CMAKE_CURRENT_LIST_DIR}/gui_gen.c
   ${CMAKE_CURRENT_LIST_DIR}/gui.c
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_14_c_array_data.c
-  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_20_c_array_data.c
+  ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_22_c_array_data.c
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_28_c_array_data.c
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_22_c_array_data.c
   ${CMAKE_CURRENT_LIST_DIR}/fonts/montserrat_24_c_array_data.c

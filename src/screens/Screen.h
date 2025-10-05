@@ -9,7 +9,7 @@ class Screen {
 public:
     virtual ~Screen() {
         LOG_DEBUG("Deleting screen '%s' (%p)", lv_obj_get_name(_screen), _screen);
-        lv_obj_delete_async(_screen); // TODO: test this
+        lv_obj_delete_async(_screen); // TODO: fix Screen deletion
     }
     virtual void update() {}
     lv_obj_t* root() const { return _screen; }

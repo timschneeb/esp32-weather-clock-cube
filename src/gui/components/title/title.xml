@@ -3,9 +3,9 @@
 		<prop name="text" type="string" default="Title" />
 	</api>
 	<styles>
-		<style name="main0" text_font="montserrat_20_c_array" />
+		<style name="root" text_font="montserrat_22_c_array" />
 	</styles>
 	<view extends="lv_label" text="$text">
-		<style name="main0" />
+		<style name="root" />
 	</view>
 </component>

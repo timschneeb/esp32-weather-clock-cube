@@ -1,67 +1,62 @@
 <screen permanent="true">
 	<styles>
-		<style name="main0" pad_all="0" border_width="0" layout="flex" flex_flow="column" pad_row="0" />
+		<style name="root" pad_all="0" border_width="0" layout="flex" flex_flow="column" pad_row="0" />
 		<style
 			name="label_current_weather"
 			text_color="0xFFFFFF"
 			text_font="montserrat_32_c_array"
 			text_align="center"
 		/>
-		<style name="label_white_center" text_align="center" text_color="0xFFFFFF" />
 	</styles>
 	<view width="100%" height="100%" style_bg_color="0x000000" scrollable="false">
-		<style name="main0" />
-		<column width="100%" height="100%" flex_flow="column" scrollable="false">
-			<lv_label name="date" width="100%" height="28" text="Mon 1 Jan." style_text_font="montserrat_20_c_array">
+		<style name="root" />
+		<column width="100%" height="100%" style_pad_row="12" flex_flow="column" scrollable="false">
+			<lv_label name="date" width="100%" text="Mon 1 Jan." style_text_font="montserrat_22_c_array">
 				<style name="label_white_center" />
 			</lv_label>
-			<lv_label name="time" width="100%" height="55" text="00:00:00" style_text_font="montserrat_48_c_array">
+
+			<lv_label name="time" width="100%" text="00:00:00" style_text_font="montserrat_48_c_array">
 				<style name="label_white_center" />
 			</lv_label>
-			<row width="100%" height="32" flex_flow="row" scrollable="false">
-				<lv_label name="temperature" text="21.5°C" width="49%">
+
+			<row width="100%" flex_flow="row" style_flex_main_place="space_evenly" scrollable="false">
+				<lv_label name="temperature" text="21.5°C">
 					<style name="label_current_weather" />
 				</lv_label>
-				<lv_label name="humidity" text="55%" width="49%">
+				<lv_label name="humidity" text="55%">
 					<style name="label_current_weather" />
 				</lv_label>
 			</row>
-			<row width="100%" height="80" flex_flow="row" style_pad_row="0" style_pad_column="0" scrollable="false">
+			<row width="100%" height="70" style_flex_main_place="space_evenly" style_pad_column="0" scrollable="false">
 				<column
-					width="132"
-					height="60"
-					style_margin_top="11"
-					flex_flow="column"
+					width="content"
+					height="100%"
+					style_flex_main_place="center"
 					style_pad_row="8"
 					scrollable="false"
 					style_pad_all="0"
 				>
 					<lv_label
 						name="min_temperature"
-						text="Min: 8.0°C"
-						height="0"
-						style_text_font="montserrat_20_c_array"
-						flex_grow="1"
+						text="Min: -8.8°C"
+						style_text_font="montserrat_22_c_array"
 						style_text_color="0xFFFFFF"
 					/>
 					<lv_label
 						name="max_temperature"
-						text="Max: 88.8°C"
-						height="24"
+						text="Max: 24.8°C"
 						align="center"
-						flex_grow="1"
-						style_text_font="montserrat_20_c_array"
+						style_text_font="montserrat_22_c_array"
 						style_text_color="0xFFFFFF"
 					/>
 				</column>
 				<lv_image
 					name="weather_icon"
-					width="90"
-					height="90"
-					align="bottom_right"
-					style_margin_top="-7"
-					style_margin_left="-7"
-					src="img_weather_02d"
+					height="100%"
+					flex_grow="1"
+					inner_align="center"
+					style_min_width="70"
+					src="img_weather_placeholder"
 				/>
 			</row>
 		</column>

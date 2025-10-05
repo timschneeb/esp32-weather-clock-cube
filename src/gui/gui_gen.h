@@ -45,13 +45,15 @@ extern lv_obj_t * clock_screen;
  * Global styles
  *----------------*/
 
+extern lv_style_t label_white_center;
+
 /*----------------
  * Fonts
  *----------------*/
 
 extern lv_font_t * montserrat_14_c_array;
 
-extern lv_font_t * montserrat_20_c_array;
+extern lv_font_t * montserrat_22_c_array;
 
 extern lv_font_t * montserrat_28_c_array;
 
@@ -72,7 +74,7 @@ extern lv_font_t * montserrat_48_c_array;
 extern const void * img_wifi;
 extern const void * img_bluetooth;
 extern const void * img_bell;
-extern const void * img_weather_02d;
+extern const void * img_weather_placeholder;
 
 /*----------------
  * Subjects
