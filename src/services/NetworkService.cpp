@@ -63,10 +63,9 @@ bool NetworkService::isConnected() {
             WiFi.begin(ssid.c_str(), pwd.c_str());
             WiFi.setAutoReconnect(true);
 
-            // TODO: not reliable
             int retries = 0;
-            while (WiFiClass::status() != WL_CONNECTED && retries < 30) {
-                vTaskDelay(pdMS_TO_TICKS(500));
+            while (WiFiClass::status() != WL_CONNECTED && retries < 60) {
+                vTaskDelay(pdMS_TO_TICKS(2000));
                 retries++;
             }
 
