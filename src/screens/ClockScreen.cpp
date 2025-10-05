@@ -1,9 +1,9 @@
 #include "ClockScreen.h"
 
+#include <gui.h>
 #include <time.h>
 
 #include "Settings.h"
-#include "gui/gui.h"
 
 const char *daysShort[] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char *months[] = {

@@ -1,10 +1,10 @@
 #include "LvglDisplayAdapter.h"
 
 #include <atomic>
+#include <gui.h>
 #include <lvgl.h>
 
 #include "LvSPIFFS.h"
-#include "gui/gui.h"
 #include "services/DisplayService.h"
 
 static OnFlushCallback onFlushCallback;

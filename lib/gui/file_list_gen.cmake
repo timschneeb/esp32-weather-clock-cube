@@ -1,0 +1,19 @@
+list(
+  APPEND
+  PROJECT_SOURCES
+        components/column/column_gen.c
+        components/header/header_gen.c
+        components/row/row_gen.c
+        components/subtitle/subtitle_gen.c
+        components/title/title_gen.c
+        screens/clock_screen/clock_screen_gen.c
+        gui_gen.c
+        gui.c
+        fonts/montserrat_14_c_array_data.c
+        fonts/montserrat_22_c_array_data.c
+        fonts/montserrat_28_c_array_data.c
+        fonts/montserrat_22_c_array_data.c
+        fonts/montserrat_24_c_array_data.c
+        fonts/montserrat_32_c_array_data.c
+        fonts/montserrat_30_c_array_data.c
+        fonts/montserrat_48_c_array_data.c)

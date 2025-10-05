@@ -1,0 +1,16 @@
+{
+  "name": "gui",
+  "version": "1.0.0",
+  "description": "Generated GUI LVGL C code for esp32-weather-clock-cube",
+  "authors":
+  [
+    {
+        "name": "Tim Schneeberger",
+        "email": "tim.schneeberger@outlook.de",
+        "maintainer": true
+    }
+  ],
+  "frameworks": "arduino",
+  "platforms": "raspberrypi, espressif8266, espressif32, ststm32",
+  "headers": "gui.h"
+}

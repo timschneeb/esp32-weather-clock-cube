@@ -12,10 +12,6 @@
 #include "utils/Diagnostics.h"
 #include "utils/Environment.h"
 
-/*
- * TODO: Move generated UI into private library in libs/
- * TODO: Remove embedded TFT_eSPI private library, pull in the official dependency and configure the library externally
- */
 void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t caps, const char *function_name)
 {
     DIAG_ENTER_SUPPRESS_IDLE_WDT
