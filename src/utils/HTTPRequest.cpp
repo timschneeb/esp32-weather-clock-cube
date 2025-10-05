@@ -28,21 +28,6 @@ void HTTPRequest::startRequest(const String& url, const uint32_t retryCount, con
     xTaskCreatePinnedToCore(requestTask, String("HTTP@" + String(requestCount++)).c_str(), 4096, this, 1, &_taskHandle, 1);
 }
 
-String HTTPRequest::encodeUrl(const String &value) {
-    String escaped = "";
-    for (const char c : value) {
-        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
-            escaped += c;
-        } else {
-            const auto hex = "0123456789ABCDEF";
-            escaped += '%';
-            escaped += hex[(c >> 4) & 0xF];
-            escaped += hex[c & 0xF];
-        }
-    }
-    return escaped;
-}
-
 void HTTPRequest::requestTask(void* pvParameters) {
     auto* self = static_cast<HTTPRequest*>(pvParameters);
     self->runRequest();
@@ -118,4 +103,83 @@ void HTTPRequest::cleanupClient() {
         vTaskDelete(_taskHandle);
         _taskHandle = nullptr;
     }
+}
+
+String HTTPRequest::encodeUrl(const String &url) {
+    // Find scheme
+    int scheme_end = url.indexOf("://");
+    String scheme = "";
+    int host_start = 0;
+    if (scheme_end >= 0) {
+        scheme = url.substring(0, scheme_end + 3); // include '://'
+        host_start = scheme_end + 3;
+    }
+    // Find path start
+    int path_start = url.indexOf('/', host_start);
+    String host_port = path_start >= 0 ? url.substring(host_start, path_start) : url.substring(host_start);
+    // Find query start
+    int query_start = url.indexOf('?', path_start >= 0 ? path_start : host_start);
+    String path = "";
+    String query = "";
+    if (path_start >= 0) {
+        if (query_start >= 0) {
+            path = url.substring(path_start, query_start);
+            query = url.substring(query_start + 1);
+        } else {
+            path = url.substring(path_start);
+        }
+    }
+    // Encode path segments
+    String encodedPath = "";
+    int seg_start = 0;
+    for (int i = 0; i <= path.length(); ++i) {
+        if (i == path.length() || path[i] == '/') {
+            String segment = path.substring(seg_start, i);
+            if (segment.length() > 0) {
+                encodedPath += encodeUrlSegment(segment);
+            }
+            if (i < path.length()) encodedPath += '/';
+            seg_start = i + 1;
+        }
+    }
+    // Encode query parameters
+    String encodedQuery = "";
+    if (query.length() > 0) {
+        int param_start = 0;
+        for (int i = 0; i <= query.length(); ++i) {
+            if (i == query.length() || query[i] == '&') {
+                String param = query.substring(param_start, i);
+                int eq_pos = param.indexOf('=');
+                if (eq_pos >= 0) {
+                    encodedQuery += encodeUrlSegment(param.substring(0, eq_pos));
+                    encodedQuery += "=";
+                    encodedQuery += encodeUrlSegment(param.substring(eq_pos + 1));
+                } else {
+                    encodedQuery += encodeUrlSegment(param);
+                }
+                if (i < query.length()) encodedQuery += "&";
+                param_start = i + 1;
+            }
+        }
+    }
+    // Rebuild URL
+    String result = scheme + host_port;
+    if (encodedPath.length() > 0) result += encodedPath;
+    if (encodedQuery.length() > 0) result += "?" + encodedQuery;
+    return result;
+}
+
+String HTTPRequest::encodeUrlSegment(const String &value) {
+    String escaped = "";
+    for (const char c : value) {
+        if (isalnum(c) || c == '-' || c == '_' || c == '.' || c == '~') {
+            escaped += c;
+        } else {
+            const auto hex = "0123456789ABCDEF";
+            escaped += '%';
+            escaped += hex[(c >> 4) & 0xF];
+            escaped += hex[c & 0xF];
+        }
+    }
+    return escaped;
 }

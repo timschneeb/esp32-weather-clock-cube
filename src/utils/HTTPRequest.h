@@ -27,7 +27,9 @@ public:
     HTTPResult result() const { return _result; }
 
 private:
-    static String encodeUrl(const String &value);
+    static String encodeUrl(const String &url);
+    static String encodeUrlSegment(const String &value);
+
     static void requestTask(void* pvParameters);
     void runRequest();
     void cleanupClient();
