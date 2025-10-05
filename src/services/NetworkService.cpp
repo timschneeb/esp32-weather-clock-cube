@@ -59,6 +59,7 @@ bool NetworkService::isConnected() {
             EventBus::instance().publish<NET_ConnectingEvent>();
             LOG_DEBUG("Connecting to WiFi... (SSID: %s)", ssid.c_str());
 
+            // TODO: fix unreliable connection on startup
             WiFiClass::mode(WIFI_STA);
             WiFi.begin(ssid.c_str(), pwd.c_str());
             WiFi.setAutoReconnect(true);
