@@ -12,6 +12,8 @@
 #include "utils/Diagnostics.h"
 #include "utils/Environment.h"
 
+#define ENABLE_DEBUG_SERVICE 0
+
 void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t caps, const char *function_name)
 {
     DIAG_ENTER_SUPPRESS_IDLE_WDT
@@ -56,7 +58,9 @@ void setup() {
     });
     configTime(0, 0, SNTP_SERVER);
 
+#if ENABLE_DEBUG_SERVICE == 1
     DebugService::instance().start();
+#endif
     DisplayService::instance().start();
     NetworkService::instance().start();
     WeatherService::instance().start();
