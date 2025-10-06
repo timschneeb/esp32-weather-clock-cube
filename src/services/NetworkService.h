@@ -5,7 +5,10 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include <Arduino.h>
+#include <esp_wifi.h>
+#include <esp_event.h>
+#include <esp_netif.h>
+#include <string>
 
 #include "Task.h"
 #include "utils/Macros.h"
@@ -13,15 +16,20 @@
 class NetworkService final : public Task {
     SINGLETON(NetworkService)
 public:
-    static String getSavedSSID();
+    static std::string getSavedSSID();
     static bool isConnected();
     static bool isInApMode();
+    static std::string getApIpString();
 
 protected:
     [[noreturn]] void run() override;
 
 private:
     static void enterAPMode();
+    static void wifi_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    static void ip_event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data);
+    static bool s_isConnected;
+    static bool s_isInApMode;
 };
 
 

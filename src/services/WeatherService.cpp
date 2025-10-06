@@ -5,7 +5,6 @@
 #include "WeatherService.h"
 
 #include <ArduinoJson.h>
-#include <WiFi.h>
 
 #include <algorithm>
 

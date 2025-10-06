@@ -34,26 +34,8 @@
                     <input type="password" id="mqttpass" name="mqttpass" value="{{mqttpass}}">
                     <input type="hidden" name="mqttpass_exists" value="{{mqttpass_exists}}">
 
-                    <label for="fip">Frigate IP</label>
-                    <input type="text" id="fip" name="fip" value="{{fip}}">
-
-                    <label for="fport">Frigate Port</label>
-                    <input type="number" id="fport" name="fport" min="1" max="65535" value="{{fport}}">
-
                     <label for="sec">Display Images (seconds)</label>
                     <input type="number" id="sec" name="sec" min="1" value="{{sec}}" required>
-
-                    <label for="slideshowInterval">Slideshow interval (ms):</label>
-                    <input type="number" id="slideshowInterval" name="slideshowInterval" min="500" max="20000" value="{{slideshowInterval}}">
-
-                    <label for="maxImages">Max Number of Images</label>
-                    <input type="number" id="maxImages" name="maxImages" min="1" max="100" value="{{maxImages}}" required>
-
-                    <label>Mode</label>
-                    <div class="checkbox-group">
-                        <label>{{alertCheckbox}} Alert</label>
-                        <label>{{detectionCheckbox}} Detection</label>
-                    </div>
 
                     <label for="weatherApiKey">OpenWeatherMap API Key (Free one call API 2.5)</label>
                     <input type="password" id="weatherApiKey" name="weatherApiKey" value="{{weatherApiKey}}">

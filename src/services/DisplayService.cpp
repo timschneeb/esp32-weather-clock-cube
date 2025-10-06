@@ -105,7 +105,6 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
     eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
     eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_ShowImageFromUrlWithZone, displayEventQueue);
     eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
     eventBus.subscribe(EventId::CFG_BrightnessUpdated, displayEventQueue);
@@ -132,6 +131,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     } else {
                         changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
                     }
+                    // TODO: show IP
                     showOverlay("WiFi connected", 3000);
                 case EventId::API_KeepAlive:
                     if (!backlight.isSleepingByPowerButton()) {
@@ -140,10 +140,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     lastKeepaliveTime = millis();
                     break;
                 case EventId::API_ShowImageFromUrl:
-                    displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url(), "");
-                    break;
-                case EventId::WEB_ShowImageFromUrlWithZone:
-                    displayImageFromAPI(event->to<WEB_ShowImageFromUrlWithZoneEvent>()->url(), event->to<WEB_ShowImageFromUrlWithZoneEvent>()->zone());
+                    displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url());
                     break;
                 case EventId::WEB_MqttDisconnected: {
                     const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
@@ -193,7 +190,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     }
 }
 
-void DisplayService::displayImageFromAPI(const String &url, const String &zone) {
+void DisplayService::displayImageFromAPI(const String &url) {
     constexpr int maxTries = 3;
     int tries = 0;
     bool success = false;
@@ -204,7 +201,7 @@ void DisplayService::displayImageFromAPI(const String &url, const String &zone) 
     const int dashIndex = detectionId.indexOf("-");
     const String suffix = (dashIndex > 0) ? detectionId.substring(dashIndex + 1) : detectionId;
 
-    String filename = "/events/" + suffix + "-" + zone + ".jpg";
+    String filename = "/events/" + suffix + "-default.jpg";
     if (filename.length() >= 32) {
         filename = "/events/default.jpg";
     }

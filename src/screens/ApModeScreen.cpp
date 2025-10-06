@@ -1,6 +1,7 @@
 #include "ApModeScreen.h"
-#include <WiFi.h>
+
 #include "Config.h"
+#include "services/NetworkService.h"
 
 ApModeScreen::ApModeScreen() {
     _screen = lv_obj_create(nullptr);
@@ -23,7 +24,7 @@ ApModeScreen::ApModeScreen() {
     lv_obj_align(pwd_label, LV_ALIGN_CENTER, 0, 0);
 
     lv_obj_t* ip_label = lv_label_create(_screen);
-    lv_label_set_text_fmt(ip_label, "IP: %s", WiFi.softAPIP().toString().c_str());
+    lv_label_set_text_fmt(ip_label, "IP: %s", NetworkService::getApIpString().c_str());
     lv_obj_set_style_text_color(ip_label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
     lv_obj_align(ip_label, LV_ALIGN_CENTER, 0, 30);
 }

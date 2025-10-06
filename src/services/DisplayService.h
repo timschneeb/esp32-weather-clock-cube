@@ -26,7 +26,7 @@ protected:
     [[noreturn]] void run() override;
 
 private:
-    void displayImageFromAPI(const String &url, const String &zone);
+    void displayImageFromAPI(const String &url);
 
     Button button;
     Backlight backlight;

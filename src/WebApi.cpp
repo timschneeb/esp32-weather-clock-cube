@@ -50,18 +50,7 @@ void WebApi::setOnMqttConfigChanged(const OnMqttConfigChangedCb &callback) {
 }
 
 void WebApi::onRootRequest(AsyncWebServerRequest *request) {
-    auto *const config = &Settings::instance();
-    config->load();
-    String mode = config->mode;
-    mode.toLowerCase();
-    const bool isAlertChecked = mode.indexOf("alert") >= 0;
-    const bool isDetectionChecked = mode.indexOf("detection") >= 0;
-
-    const String alertCheckbox = "<input type='checkbox' id='mode_alert' name='mode_alert' value='alert' " +
-                                 getCheckedAttribute(isAlertChecked) + ">";
-    const String detectionCheckbox =
-            "<input type='checkbox' id='mode_detection' name='mode_detection' value='detection' "
-            + getCheckedAttribute(isDetectionChecked) + ">";
+    const auto config = &Settings::instance();
 
     File file = SPIFFS.open("/index.html", "r");
     if (!file) {
@@ -80,13 +69,7 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
     html.replace("{{mqttuser}}", config->mqttUser);
     html.replace("{{mqttpass}}", config->mqttPass.load() != "" ? "******" : "");
     html.replace("{{mqttpass_exists}}", config->mqttPass.load() != "" ? "1" : "0");
-    html.replace("{{fip}}", config->fip);
-    html.replace("{{fport}}", String(config->fport));
     html.replace("{{sec}}", String(config->displayDuration));
-    html.replace("{{maxImages}}", String(config->maxImages));
-    html.replace("{{slideshowInterval}}", String(config->slideshowSec));
-    html.replace("{{alertCheckbox}}", alertCheckbox);
-    html.replace("{{detectionCheckbox}}", detectionCheckbox);
     html.replace("{{weatherApiKey}}", config->weatherApiKey.load() != "" ? "******" : "");
     html.replace("{{weatherApiKey_exists}}", config->weatherApiKey.load() != "" ? "1" : "0");
     html.replace("{{weatherCity}}", config->weatherCity);
@@ -135,28 +118,7 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
         settings->pwd = newPwd;
     }
 
-    settings->fip = request->getParam("fip", true)->value();
-    settings->fport = getIntParam(request, "fport", 5000, 1, 65535);
-
     settings->displayDuration = getIntParam(request, "sec", 30, 1);
-    settings->maxImages = getIntParam(request, "maxImages", 0, 1, 60);
-    settings->slideshowSec = getIntParam(request, "slideInterval", 0, 500, 20000);
-
-    // Modes
-    String modeValue = "";
-    if (request->hasParam("mode_alert", true)) {
-        if (request->getParam("mode_alert", true)->value() == "alert") {
-            modeValue += "alert";
-        }
-    }
-    if (request->hasParam("mode_detection", true)) {
-        if (request->getParam("mode_detection", true)->value() == "detection") {
-            if (modeValue != "")
-                modeValue += ",";
-            modeValue += "detection";
-        }
-    }
-    settings->mode = modeValue;
 
     // Weather
     String newApiKey = request->getParam("weatherApiKey", true)->value();
@@ -202,6 +164,7 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
         onMqttConfigChanged(newMqtt, newMqttPort, newMqttUser, newMqttPass != "******" ? newMqttPass : oldMqttPass);
     }
 
+    LOG_DEBUG("Settings saved");
     Settings::instance().save();
 
     String cacheBuster = "/?v=" + String(millis());

@@ -16,11 +16,9 @@ This project is designed to be built using [PlatformIO](https://platformio.org/)
 - Synchronizes its power state with your computer (device must call `/keepalive` endpoint at least every 4 minutes to stay on)
 - Weather Display using OpenWeatherMap API (2.5), including temperature, humidity, min/max temperature, and icon rendering.
 - Clock Display with date, time, and weather info.
-- Web Configuration UI: WiFi, MQTT, Frigate IP, weather API key, display settings, and more.
+- Web Configuration UI: WiFi, MQTT, weather API key, display settings, and more.
 - Persistent Storage using Preferences and SPIFFS to save settings and event images.
 - Fallback AP-mode if WiFi is not available.
-- Live Frigate Notifications via MQTT on ESP32-S3 with automatic image downloading.
-- Image Slideshow of recent events with zone labeling, auto-clearing logic, and memory limits.
 
 ### Build
 ```

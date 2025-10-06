@@ -23,7 +23,6 @@ MAKE_NAMED_ENUM_CLASS(EventId,
     API_ShowImageFromUrl,
     WEB_MqttDisconnected,
     WEB_MqttError,
-    WEB_ShowImageFromUrlWithZone,
     WEB_ShowLocalImage,
 
     /* WeatherService */
@@ -59,7 +58,6 @@ REGISTER_EVENT(API_KeepAlive, (unsigned long, now));
 REGISTER_EVENT(API_ShowImageFromUrl, (String, url));
 REGISTER_EVENT(WEB_MqttDisconnected, (AsyncMqttClientDisconnectReason, reason));
 REGISTER_EVENT(WEB_MqttError, (String, message));
-REGISTER_EVENT(WEB_ShowImageFromUrlWithZone, (String, url), (String, zone));
 REGISTER_EVENT(WEB_ShowLocalImage, (String, filename));
 
 REGISTER_EVENT_NOARGS(WEA_ForecastUpdated);

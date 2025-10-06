@@ -26,10 +26,7 @@
     INT(mqttPort, 1883) \
     STRING(mqttUser, "") \
     STRING(mqttPass, "") \
-    STRING(fip, "") \
-    INT(fport, 5000) \
     INT(displayDuration, 30) \
-    STRING(mode, "alert") \
     STRING(weatherApiKey, "") \
     STRING(weatherCity, "") \
     STRING(weatherIcon, "") \
@@ -38,10 +35,8 @@
     FLOAT(weatherTempDay, 0.0f) \
     FLOAT(weatherTempMin, 0.0f) \
     FLOAT(weatherTempMax, 0.0f) \
-    INT(maxImages, 10) \
     INT(brightness, 100) \
-    STRING(timezone, "CET-1CEST,M3.5.0,M10.5.0/3") \
-    INT(slideshowSec, 3000)
+    STRING(timezone, "CET-1CEST,M3.5.0,M10.5.0/3")
 
 class Settings {
     SINGLETON(Settings)
