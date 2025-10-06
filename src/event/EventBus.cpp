@@ -1,5 +1,4 @@
 #include "EventBus.h"
-#include <Arduino.h> // For Serial
 
 #include "services/DisplayService.h"
 
@@ -46,14 +45,14 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, cons
     if (xSemaphoreTake(mutex, portMAX_DELAY) == pdTRUE) {
         LOG_DEBUG("Dispatching %s %s", named_enum::name(event->id()), (urgent ? "(urgent)" : ""));
         for (size_t i = 0; i < subscriberCount; ++i) {
-            const auto& sub = subscriptions[i];
-            if (sub.eventId == event->id()) {
+            const auto&[eventId, queue] = subscriptions[i];
+            if (eventId == event->id()) {
                 auto* heapEventPtr = new EventPtr(event);
                 BaseType_t result;
                 if (urgent)
-                    result = xQueueSendToFront(sub.queue, &heapEventPtr, ticksToWait);
+                    result = xQueueSendToFront(queue, &heapEventPtr, ticksToWait);
                 else
-                    result = xQueueSend(sub.queue, &heapEventPtr, ticksToWait);
+                    result = xQueueSend(queue, &heapEventPtr, ticksToWait);
 
                 if (result == errQUEUE_FULL) {
                     LOG_ERROR("Queue full, event dropped for subscriber %u", i);
@@ -61,7 +60,7 @@ void EventBus::publish(const EventPtr &event, const TickType_t ticksToWait, cons
                         "Queue full\n" +
                         String(named_enum::name(event->id())) + " dropped\n"
                         "Subscriber " + String(i) + "\n"
-                        "Wait count: " + String(uxQueueMessagesWaiting(sub.queue))
+                        "Wait count: " + String(uxQueueMessagesWaiting(queue))
                         ).c_str());
                 }
             }

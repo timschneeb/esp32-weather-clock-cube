@@ -16,10 +16,10 @@
 class NetworkService final : public Task {
     SINGLETON(NetworkService)
 public:
-    static std::string getSavedSSID();
     static bool isConnected();
     static bool isInApMode();
-    static std::string getApIpString();
+    static String getApIpString();
+    static String getStaIpString();
 
 protected:
     [[noreturn]] void run() override;

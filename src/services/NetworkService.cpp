@@ -25,10 +25,6 @@ bool NetworkService::s_isInApMode = false;
 
 NetworkService::NetworkService() : Task("NetworkService", 4096, 1) {}
 
-std::string NetworkService::getSavedSSID() {
-    return std::string(Settings::instance().ssid.load().c_str());
-}
-
 bool NetworkService::isConnected() {
     return s_isConnected;
 }
@@ -150,15 +146,23 @@ void NetworkService::enterAPMode() {
     EventBus::instance().publish<NET_ApCreatedEvent>();
 }
 
-std::string NetworkService::getApIpString() {
+static String formatIpForNetifKey(const char* ifkey) {
     esp_netif_ip_info_t ip_info;
-    esp_netif_t* ap_netif = esp_netif_get_handle_from_ifkey("WIFI_AP_DEF");
-    if (ap_netif && esp_netif_get_ip_info(ap_netif, &ip_info) == ESP_OK) {
+    esp_netif_t* netif = esp_netif_get_handle_from_ifkey(ifkey);
+    if (netif && esp_netif_get_ip_info(netif, &ip_info) == ESP_OK) {
         char buf[16];
         snprintf(buf, sizeof(buf), "%d.%d.%d.%d",
                  ip4_addr1(&ip_info.ip), ip4_addr2(&ip_info.ip),
                  ip4_addr3(&ip_info.ip), ip4_addr4(&ip_info.ip));
-        return std::string(buf);
+        return String(buf);
     }
     return "0.0.0.0";
+}
+
+String NetworkService::getApIpString() {
+    return formatIpForNetifKey("WIFI_AP_DEF");
+}
+
+String NetworkService::getStaIpString() {
+    return formatIpForNetifKey("WIFI_STA_DEF");
 }

@@ -131,8 +131,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     } else {
                         changeScreen(std::unique_ptr<Screen>(new ClockScreen()), 0);
                     }
-                    // TODO: show IP
-                    showOverlay("WiFi connected", 3000);
+                    showOverlay("IP: " + String(NetworkService::getStaIpString()), 3000);
                 case EventId::API_KeepAlive:
                     if (!backlight.isSleepingByPowerButton()) {
                         backlight.wake();
