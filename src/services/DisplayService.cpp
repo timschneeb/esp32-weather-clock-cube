@@ -195,15 +195,7 @@ void DisplayService::displayImageFromAPI(const String &url) {
     bool success = false;
     String lastErrorReason = "";
     constexpr size_t MAX_FILE_SIZE = 70 * 1024;
-
-    const String detectionId = url.substring(url.lastIndexOf("/events/") + 8, url.indexOf("/snapshot.jpg"));
-    const int dashIndex = detectionId.indexOf("-");
-    const String suffix = (dashIndex > 0) ? detectionId.substring(dashIndex + 1) : detectionId;
-
-    String filename = "/events/" + suffix + "-default.jpg";
-    if (filename.length() >= 32) {
-        filename = "/events/default.jpg";
-    }
+    const String filename = "/events/default.jpg";
 
     if (SPIFFS.exists(filename)) {
         SPIFFS.remove(filename);
@@ -212,6 +204,7 @@ void DisplayService::displayImageFromAPI(const String &url) {
     while (tries < maxTries && !success) {
         HTTPClient http;
         http.begin(url);
+        // TODO: Not ideal, blocking display task
         if (const int httpCode = http.GET(); httpCode == 200) {
             const uint32_t len = http.getSize();
             if (len > MAX_FILE_SIZE) {
@@ -234,11 +227,11 @@ void DisplayService::displayImageFromAPI(const String &url) {
             lastErrorReason = HTTPClient::errorToString(httpCode) + ": " + http.getString();
             http.end();
             tries++;
-            delay(500);
+            vTaskDelay(500);
         }
     }
 
     if (!success) {
-        changeScreen(std::unique_ptr<Screen>(new ErrorScreen("Loading failed: " + lastErrorReason)), 5);
+        changeScreen(std::unique_ptr<Screen>(new ErrorScreen("Loading failed:\n" + lastErrorReason)), 5);
     }
 }
