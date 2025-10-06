@@ -91,6 +91,7 @@ void WebService::onMqttMessage(
             setupMqttFromSettings();
             mqttClient.connect();
         }
-        vTaskDelay(pdMS_TO_TICKS(500));
+        api.tick();
+        vTaskDelay(pdMS_TO_TICKS(1500));
     }
 }

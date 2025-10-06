@@ -36,6 +36,7 @@ WebApi::WebApi() : server(80) {
     server.on("/update", HTTP_POST, BIND_CB(onUpdatePostRequest), BIND_UPLOAD_CB(onUpdatePostUpload));
     server.on("/delete_all", HTTP_GET, BIND_CB(onDeleteAllRequest));
     server.on("/show_image", HTTP_GET, BIND_CB(onShowImageRequest));
+    server.on("/show_image", HTTP_POST, BIND_CB(onShowImagePostRequest), BIND_UPLOAD_CB(onShowImagePostUpload));
     server.on("/reboot", HTTP_GET, BIND_CB(onRebootRequest));
     server.on("/keepalive", HTTP_GET, BIND_CB(onKeepAliveRequest));
     server.on("/diag", HTTP_GET, BIND_CB(onDiagRequest));
@@ -240,6 +241,80 @@ void WebApi::onShowImageRequest(AsyncWebServerRequest *request) {
     }
 }
 
+void WebApi::onShowImagePostRequest(AsyncWebServerRequest *request) {
+    request->send(200, "text/plain", "Uploaded");
+}
+
+String findFreeFileSlot() {
+    for (int i = 1; i <= 3; i++) {
+        String path = "/events/uploaded_" + String(i) + ".jpg";
+        if (!SPIFFS.exists(path)) {
+            return path;
+        }
+    }
+
+    LOG_WARN("No free upload slots, overwriting uploaded_1.jpg");
+    SPIFFS.remove("/events/uploaded_1.jpg");
+    return "/events/uploaded_1.jpg";
+}
+
+void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String &filename, const size_t index,
+                                   uint8_t *data, const size_t len, const bool final) {
+    constexpr size_t maxUploadSize = 2 * 1024 * 1024; // 2MB max per image
+
+    if (index == 0U) {
+        // Start of upload: allocate buffer in PSRAM
+        uploadStates[filename] = {
+            .buffer = static_cast<uint8_t *>(heap_caps_malloc(maxUploadSize, MALLOC_CAP_SPIRAM)),
+            .size = maxUploadSize,
+            .offset = 0,
+            .lastActivityTime = millis()
+        };
+
+        if (!uploadStates[filename].buffer) {
+            request->send(500, "text/plain", "PSRAM allocation failed");
+            uploadStates.erase(filename);
+            return;
+        }
+    }
+    else if (uploadStates.find(filename) == uploadStates.end()) {
+        // No state found for this ongoing upload. Likely expired
+        request->send(408, "text/plain", "Session expired");
+        return;
+    }
+
+    auto &state = uploadStates[filename];
+    if (state.buffer && (state.offset + len <= state.size)) {
+        memcpy(state.buffer + state.offset, data, len);
+        state.offset += len;
+        if (final) {
+            // Save buffer to SPIFFS as image file
+            String savePath = findFreeFileSlot();
+            File imgFile = SPIFFS.open(savePath, "w");
+            if (!imgFile) {
+                request->send(500, "text/plain", "Failed to open file for writing: " + savePath);
+                heap_caps_free(state.buffer);
+                uploadStates.erase(filename);
+                return;
+            }
+            const size_t written = imgFile.write(state.buffer, state.offset);
+            imgFile.close();
+            heap_caps_free(state.buffer);
+            uploadStates.erase(filename);
+            if (written != state.offset) {
+                request->send(500, "text/plain", "Failed to write complete image. Written: " + String(written));
+            } else {
+                EventBus::instance().publish<API_ShowImageEvent>(savePath);
+            }
+        }
+    } else if (state.buffer) {
+        // Buffer overflow
+        heap_caps_free(state.buffer);
+        uploadStates.erase(filename);
+        request->send(413, "text/plain", "Upload too large (max " + String(maxUploadSize) + " bytes)");
+    }
+}
+
 void WebApi::onRebootRequest(AsyncWebServerRequest *request) {
     LOG_INFO("Reboot requested");
     request->send(200, "text/plain", "Rebooting ESP32...");
@@ -261,6 +336,23 @@ void WebApi::onDiagRequest(AsyncWebServerRequest *request) {
     LOG_INFO("%s", heap.c_str());
     Diagnostics::printGlobalHeapWatermark();
 }
+
+void WebApi::tick() {
+    // Clean up any abandoned uploads (e.g. client disconnected)
+    for (auto it = uploadStates.begin(); it != uploadStates.end(); ) {
+        if (millis() - it->second.lastActivityTime < 30000) {
+            ++it;
+            continue;
+        }
+
+        LOG_DEBUG("Abandoned upload for %s, cleaning up", it->first.c_str());
+        if (it->second.buffer) {
+            heap_caps_free(it->second.buffer);
+        }
+        it = uploadStates.erase(it);
+    }
+}
+
 
 String WebApi::getImagesList() {
     String html = "<ul class='image-list'>";

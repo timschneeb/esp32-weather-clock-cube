@@ -6,6 +6,7 @@
 #define EVENTS_H
 
 #include <Arduino.h>
+#include <memory>
 #include <type_traits>
 
 #include "AsyncMqttClient/DisconnectReasons.hpp"
@@ -20,6 +21,7 @@ MAKE_NAMED_ENUM_CLASS(EventId,
 
     /* WebServer */
     API_KeepAlive,
+    API_ShowImage,
     API_ShowImageFromUrl,
     WEB_MqttDisconnected,
     WEB_MqttError,
@@ -39,7 +41,7 @@ public:
 
     template<typename T>
     T* to() {
-        static_assert(std::is_base_of<IEvent, T>::value, "Type parameter must derive from EventArgs");
+        static_assert(std::is_base_of_v<IEvent, T>, "Type parameter must derive from EventArgs");
         return static_cast<T*>(this);
     }
 
@@ -55,6 +57,7 @@ REGISTER_EVENT_NOARGS(NET_StaConnected);
 REGISTER_EVENT_NOARGS(NET_ApCreated);
 
 REGISTER_EVENT(API_KeepAlive, (unsigned long, now));
+REGISTER_EVENT(API_ShowImage, (String, filename));
 REGISTER_EVENT(API_ShowImageFromUrl, (String, url));
 REGISTER_EVENT(WEB_MqttDisconnected, (AsyncMqttClientDisconnectReason, reason));
 REGISTER_EVENT(WEB_MqttError, (String, message));

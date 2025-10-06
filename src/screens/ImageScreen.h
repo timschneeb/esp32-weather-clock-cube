@@ -8,10 +8,12 @@
 
 class ImageScreen final : public Screen {
 public:
-    explicit ImageScreen(const String& filename);
+    explicit ImageScreen(const String& filename, bool deleteLater = false);
+    ~ImageScreen() override;
 
 private:
     String filename;
+    bool deleteLater;
 };
 
 #endif //IMAGESCREEN_H

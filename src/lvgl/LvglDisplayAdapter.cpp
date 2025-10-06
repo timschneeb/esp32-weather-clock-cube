@@ -13,7 +13,7 @@ static std::atomic<bool> killed;
 LvglDisplayAdapter::LvglDisplayAdapter() : display(nullptr), drawBuf1(nullptr), drawBuf2(nullptr) {}
 
 void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
-    lv_log_register_print_cb(onLog);
+    //lv_log_register_print_cb(onLog);
 
     lv_init();
     lv_tick_set_cb(getTicks);

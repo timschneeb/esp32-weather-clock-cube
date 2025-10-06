@@ -102,6 +102,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::NET_StaConnected, displayEventQueue);
     eventBus.subscribe(EventId::NET_ApCreated, displayEventQueue);
     eventBus.subscribe(EventId::API_KeepAlive, displayEventQueue);
+    eventBus.subscribe(EventId::API_ShowImage, displayEventQueue);
     eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
     eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
     eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
@@ -138,6 +139,11 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     }
                     lastKeepaliveTime = millis();
                     break;
+                case EventId::API_ShowImage: {
+                    const auto filename = event->to<API_ShowImageEvent>()->filename();
+                    changeScreen(std::unique_ptr<Screen>(new ImageScreen(filename, true)), Settings::instance().displayDuration);
+                    break;
+                }
                 case EventId::API_ShowImageFromUrl:
                     displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url());
                     break;
