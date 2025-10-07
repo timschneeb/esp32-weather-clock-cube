@@ -37,6 +37,7 @@ WebApi::WebApi() : server(80) {
     server.on("/delete_all", HTTP_GET, BIND_CB(onDeleteAllRequest));
     server.on("/show_image", HTTP_GET, BIND_CB(onShowImageRequest));
     server.on("/show_image", HTTP_POST, BIND_CB(onShowImagePostRequest), BIND_UPLOAD_CB(onShowImagePostUpload));
+    server.on("/show_message", HTTP_GET, BIND_CB(onShowMessageRequest));
     server.on("/reboot", HTTP_GET, BIND_CB(onRebootRequest));
     server.on("/keepalive", HTTP_GET, BIND_CB(onKeepAliveRequest));
     server.on("/diag", HTTP_GET, BIND_CB(onDiagRequest));
@@ -55,7 +56,7 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
 
     File file = SPIFFS.open("/index.html", "r");
     if (!file) {
-        request->send(500, "text/plain", "Could not open index.html");
+        request->send(500, "text/plain", "Could not open index.html\n");
         return;
     }
     String html = file.readString();
@@ -175,7 +176,7 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
 void WebApi::onUpdateRequest(AsyncWebServerRequest *request) {
     File file = SPIFFS.open("/update.html", "r");
     if (!file) {
-        request->send(500, "text/plain", "Could not open update.html");
+        request->send(500, "text/plain", "Could not open update.html\n");
         return;
     }
     const String html = file.readString();
@@ -185,7 +186,7 @@ void WebApi::onUpdateRequest(AsyncWebServerRequest *request) {
 
 void WebApi::onUpdatePostRequest(AsyncWebServerRequest *request) {
     const bool ok = !Update.hasError();
-    request->send(200, "text/plain", ok ? "Update completed. Restarting..." : "Update failed!");
+    request->send(200, "text/plain", ok ? "Update completed. Restarting...\n" : "Update failed!\n");
     if (ok) {
         vTaskDelay(pdMS_TO_TICKS(1000));
         ESP.restart();
@@ -210,7 +211,7 @@ void WebApi::onDeleteAllRequest(AsyncWebServerRequest *request) {
     int deleted = 0;
     File root = SPIFFS.open("/events");
     if (!root || !root.isDirectory()) {
-        request->send(500, "text/plain", "Could not open /events");
+        request->send(500, "text/plain", "Could not open /events\n");
         return;
     }
     File file = root.openNextFile();
@@ -227,7 +228,7 @@ void WebApi::onDeleteAllRequest(AsyncWebServerRequest *request) {
         file = root.openNextFile();
     }
     root.close();
-    request->send(200, "text/plain", "Deleted: " + String(deleted) + " images");
+    request->send(200, "text/plain", "Deleted: " + String(deleted) + " images\n");
     request->redirect("/?v=" + String(millis())); // Cache buster
 }
 
@@ -235,14 +236,14 @@ void WebApi::onShowImageRequest(AsyncWebServerRequest *request) {
     if (request->hasParam("url")) {
         const String url = request->getParam("url")->value();
         EventBus::instance().publish<API_ShowImageFromUrlEvent>(url);
-        request->send(200, "text/plain", "Image will be shown on display!");
+        request->send(200, "text/plain", "Image will be shown on display!\n");
     } else {
-        request->send(400, "text/plain", "Missing url parameter");
+        request->send(400, "text/plain", "Missing url parameter\n");
     }
 }
 
 void WebApi::onShowImagePostRequest(AsyncWebServerRequest *request) {
-    request->send(200, "text/plain", "Uploaded");
+    request->send(200, "text/plain", "Uploaded\n");
 }
 
 String findFreeFileSlot() {
@@ -272,14 +273,14 @@ void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String 
         };
 
         if (!uploadStates[filename].buffer) {
-            request->send(500, "text/plain", "PSRAM allocation failed");
+            request->send(500, "text/plain", "PSRAM allocation failed\n");
             uploadStates.erase(filename);
             return;
         }
     }
     else if (uploadStates.find(filename) == uploadStates.end()) {
         // No state found for this ongoing upload. Likely expired
-        request->send(408, "text/plain", "Session expired");
+        request->send(408, "text/plain", "Session expired\n");
         return;
     }
 
@@ -292,7 +293,7 @@ void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String 
             String savePath = findFreeFileSlot();
             File imgFile = SPIFFS.open(savePath, "w");
             if (!imgFile) {
-                request->send(500, "text/plain", "Failed to open file for writing: " + savePath);
+                request->send(500, "text/plain", "Failed to open file for writing: " + savePath + "\n");
                 heap_caps_free(state.buffer);
                 uploadStates.erase(filename);
                 return;
@@ -302,7 +303,7 @@ void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String 
             heap_caps_free(state.buffer);
             uploadStates.erase(filename);
             if (written != state.offset) {
-                request->send(500, "text/plain", "Failed to write complete image. Written: " + String(written));
+                request->send(500, "text/plain", "Failed to write complete image. Written: " + String(written) + "\n");
             } else {
                 EventBus::instance().publish<API_ShowImageEvent>(savePath);
             }
@@ -311,13 +312,24 @@ void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String 
         // Buffer overflow
         heap_caps_free(state.buffer);
         uploadStates.erase(filename);
-        request->send(413, "text/plain", "Upload too large (max " + String(maxUploadSize) + " bytes)");
+        request->send(413, "text/plain", "Upload too large (max " + String(maxUploadSize) + " bytes)\n");
+    }
+}
+
+void WebApi::onShowMessageRequest(AsyncWebServerRequest *request) {
+    if (request->hasParam("msg")) {
+        const String msg = request->getParam("msg")->value();
+        const uint32_t duration = request->hasParam("duration") ? request->getParam("duration")->value().toInt() : 5000;
+        EventBus::instance().publish<API_ShowMessageEvent>(msg, duration);
+        request->send(200, "text/plain", "Message will be shown on display!\n");
+    } else {
+        request->send(400, "text/plain", "Missing msg parameter\n");
     }
 }
 
 void WebApi::onRebootRequest(AsyncWebServerRequest *request) {
     LOG_INFO("Reboot requested");
-    request->send(200, "text/plain", "Rebooting ESP32...");
+    request->send(200, "text/plain", "Rebooting ESP32...\n");
     vTaskDelay(pdMS_TO_TICKS(500));
     ESP.restart();
 }
@@ -326,13 +338,13 @@ void WebApi::onKeepAliveRequest(AsyncWebServerRequest *request) {
     const auto now = millis();
     const auto until = now + KEEPALIVE_TIMEOUT;
     LOG_DEBUG("Signal received at %lu", now);
-    request->send(200, "application/json", "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}");
+    request->send(200, "application/json", "{\"now\": " + String(now) + ", \"alive_until\": " + String(until) + "}\n");
     EventBus::instance().publish<API_KeepAliveEvent>(now);
 }
 
 void WebApi::onDiagRequest(AsyncWebServerRequest *request) {
     const auto heap = Diagnostics::collectHeapUsage();
-    request->send(200, "text/plain", heap);
+    request->send(200, "text/plain", heap + "\n");
     LOG_INFO("%s", heap.c_str());
     Diagnostics::printGlobalHeapWatermark();
 }

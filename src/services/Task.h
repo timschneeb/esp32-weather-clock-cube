@@ -8,6 +8,8 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
+#include "utils/Macros.h"
+
 /// Bare-minimum wrapper base class for a FreeRTOS task. This allows encapsulation of a task
 /// alongside with its context.
 ///
@@ -101,7 +103,11 @@ private:
 
     std::atomic<TaskHandle_t> handle_{nullptr};
 
-    static void runAdapter(void *self) { static_cast<Task *>(self)->run(); }
+    static void runAdapter(void *self) {
+        auto* task = static_cast<Task *>(self);
+        LOG_DEBUG("Task '%s' started on core %d", task->taskName(), xPortGetCoreID());
+        task->run();
+    }
 
     Task(Task const &) = delete;
     Task(Task &&) = delete;

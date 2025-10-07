@@ -39,6 +39,7 @@ private:
     void onShowImageRequest(AsyncWebServerRequest *request);
     void onShowImagePostRequest(AsyncWebServerRequest *request);
     void onShowImagePostUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,size_t len, bool final);
+    void onShowMessageRequest(AsyncWebServerRequest *request);
     void onRebootRequest(AsyncWebServerRequest *request);
     void onKeepAliveRequest(AsyncWebServerRequest *request);
     void onDiagRequest(AsyncWebServerRequest *request);

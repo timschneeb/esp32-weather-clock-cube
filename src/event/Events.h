@@ -23,6 +23,7 @@ MAKE_NAMED_ENUM_CLASS(EventId,
     API_KeepAlive,
     API_ShowImage,
     API_ShowImageFromUrl,
+    API_ShowMessage,
     WEB_MqttDisconnected,
     WEB_MqttError,
     WEB_ShowLocalImage,
@@ -59,6 +60,7 @@ REGISTER_EVENT_NOARGS(NET_ApCreated);
 REGISTER_EVENT(API_KeepAlive, (unsigned long, now));
 REGISTER_EVENT(API_ShowImage, (String, filename));
 REGISTER_EVENT(API_ShowImageFromUrl, (String, url));
+REGISTER_EVENT(API_ShowMessage, (String, message), (unsigned int, duration));
 REGISTER_EVENT(WEB_MqttDisconnected, (AsyncMqttClientDisconnectReason, reason));
 REGISTER_EVENT(WEB_MqttError, (String, message));
 REGISTER_EVENT(WEB_ShowLocalImage, (String, filename));

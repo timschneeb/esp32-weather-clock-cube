@@ -48,17 +48,6 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     }
 }
 
-
-static void anim_x_cb(void * var, int32_t v)
-{
-    lv_obj_set_x((lv_obj_t *) var, v);
-}
-
-static void anim_size_cb(void * var, int32_t v)
-{
-    lv_obj_set_size((lv_obj_t *) var, v, v);
-}
-
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {
     // Old Screen object is implicitly deleted here
     currentScreen = std::move(newScreen);
@@ -75,10 +64,11 @@ void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsig
 
 void DisplayService::showOverlay(const String& message, const unsigned long duration) {
     lv_obj_t* label = lv_label_create(lv_layer_top());
-    lv_obj_set_style_pad_all(label, 0, LV_STATE_DEFAULT);
-    lv_obj_set_style_margin_hor(label, 8, LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(label, 8, LV_STATE_DEFAULT);
+    lv_obj_set_size(label, lv_pct(100), LV_SIZE_CONTENT);
     lv_label_set_text(label, message.c_str());
     lv_label_set_long_mode(label, LV_LABEL_LONG_MODE_WRAP);
+    lv_obj_set_style_text_align(label, LV_TEXT_ALIGN_CENTER, LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(label, LV_OPA_COVER, 0);
     lv_obj_set_style_text_color(label, lv_color_hex(0xFFFFFF), LV_STATE_DEFAULT);
     lv_obj_set_style_bg_color(label, lv_color_hex(0x444444), LV_STATE_DEFAULT);
@@ -104,6 +94,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::API_KeepAlive, displayEventQueue);
     eventBus.subscribe(EventId::API_ShowImage, displayEventQueue);
     eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
+    eventBus.subscribe(EventId::API_ShowMessage, displayEventQueue);
     eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
     eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
     eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
@@ -147,6 +138,11 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                 case EventId::API_ShowImageFromUrl:
                     displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url());
                     break;
+                case EventId::API_ShowMessage: {
+                    const auto args = event->to<API_ShowMessageEvent>();
+                    showOverlay(args->message(), args->duration());
+                    break;
+                }
                 case EventId::WEB_MqttDisconnected: {
                     const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
                     if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
