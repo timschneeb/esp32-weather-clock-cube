@@ -392,7 +392,7 @@ void WebApi::tick() {
 
     // Clean up any abandoned uploads (e.g. client disconnected)
     for (auto it = uploadStates.begin(); it != uploadStates.end(); ) {
-        if (millis() - it->second.lastActivityTime < uploadTimeoutz) {
+        if (millis() - it->second.lastActivityTime < uploadTimeout) {
             ++it;
             continue;
         }
