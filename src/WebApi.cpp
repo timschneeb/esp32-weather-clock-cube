@@ -350,8 +350,6 @@ void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String 
             EventBus::instance().publish<API_ShowImageEvent>(savePath);
         }
     }
-
-    printImageUploadStates();
 }
 
 void WebApi::onShowMessageRequest(AsyncWebServerRequest *request) {
