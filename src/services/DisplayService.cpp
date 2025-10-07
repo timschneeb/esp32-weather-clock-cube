@@ -43,9 +43,10 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     tft.panic(msg, footer.c_str());
 
     Diagnostics::printHeapUsageSafely();
-    while (true) {
+    /*while (true) {
         vTaskDelay(portMAX_DELAY);
-    }
+    }*/
+    abort();
 }
 
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {

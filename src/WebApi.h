@@ -38,6 +38,9 @@ private:
     void onDeleteAllRequest(AsyncWebServerRequest *request);
     void onShowImageRequest(AsyncWebServerRequest *request);
     void onShowImagePostRequest(AsyncWebServerRequest *request);
+
+    void printImageUploadStates();
+
     void onShowImagePostUpload(AsyncWebServerRequest *request, const String &filename, size_t index, uint8_t *data,size_t len, bool final);
     void onShowMessageRequest(AsyncWebServerRequest *request);
     void onRebootRequest(AsyncWebServerRequest *request);

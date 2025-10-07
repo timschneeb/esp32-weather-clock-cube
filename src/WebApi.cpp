@@ -259,21 +259,35 @@ String findFreeFileSlot() {
     return "/events/uploaded_1.jpg";
 }
 
+void WebApi::printImageUploadStates() {
+    LOG_DEBUG("Current upload states:");
+    for (const auto &[filename, state] : uploadStates) {
+        LOG_DEBUG(" - %s: %u bytes, offset %u, last activity %llu ms ago", filename.c_str(), state.size, state.offset,
+                  millis() - state.lastActivityTime);
+    }
+}
+
 void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String &filename, const size_t index,
                                    uint8_t *data, const size_t len, const bool final) {
+
     constexpr size_t maxUploadSize = 2 * 1024 * 1024; // 2MB max per image
+    constexpr size_t preallocSize = 20 * 1024; // 20KB preallocation
+
+    LOG_DEBUG("Upload chunk for %s: index=%u, len=%u, final=%d", filename.c_str(), index, len, final);
 
     if (index == 0U) {
-        // Start of upload: allocate buffer in PSRAM
+        // Start of upload: preallocate 20KB or len, whichever is larger
+        size_t allocSize = len > preallocSize ? len : preallocSize;
         uploadStates[filename] = {
-            .buffer = static_cast<uint8_t *>(heap_caps_malloc(maxUploadSize, MALLOC_CAP_SPIRAM)),
-            .size = maxUploadSize,
+            .buffer = static_cast<uint8_t *>(heap_caps_malloc(allocSize, MALLOC_CAP_SPIRAM)),
+            .size = allocSize,
             .offset = 0,
             .lastActivityTime = millis()
         };
 
         if (!uploadStates[filename].buffer) {
             request->send(500, "text/plain", "PSRAM allocation failed\n");
+            LOG_ERROR("PSRAM allocation failed for upload of %s", filename.c_str());
             uploadStates.erase(filename);
             return;
         }
@@ -281,39 +295,63 @@ void WebApi::onShowImagePostUpload(AsyncWebServerRequest *request, const String 
     else if (uploadStates.find(filename) == uploadStates.end()) {
         // No state found for this ongoing upload. Likely expired
         request->send(408, "text/plain", "Session expired\n");
+        LOG_ERROR("No upload state found for %s", filename.c_str());
         return;
     }
 
     auto &state = uploadStates[filename];
-    if (state.buffer && (state.offset + len <= state.size)) {
-        memcpy(state.buffer + state.offset, data, len);
-        state.offset += len;
-        if (final) {
-            // Save buffer to SPIFFS as image file
-            String savePath = findFreeFileSlot();
-            File imgFile = SPIFFS.open(savePath, "w");
-            if (!imgFile) {
-                request->send(500, "text/plain", "Failed to open file for writing: " + savePath + "\n");
-                heap_caps_free(state.buffer);
-                uploadStates.erase(filename);
-                return;
-            }
-            const size_t written = imgFile.write(state.buffer, state.offset);
-            imgFile.close();
-            heap_caps_free(state.buffer);
-            uploadStates.erase(filename);
-            if (written != state.offset) {
-                request->send(500, "text/plain", "Failed to write complete image. Written: " + String(written) + "\n");
-            } else {
-                EventBus::instance().publish<API_ShowImageEvent>(savePath);
-            }
-        }
-    } else if (state.buffer) {
+    state.lastActivityTime = millis();
+
+    // Calculate new required size
+    const size_t newTotal = state.offset + len;
+    if (newTotal > maxUploadSize) {
         // Buffer overflow
         heap_caps_free(state.buffer);
         uploadStates.erase(filename);
         request->send(413, "text/plain", "Upload too large (max " + String(maxUploadSize) + " bytes)\n");
+        return;
     }
+    if (newTotal > state.size) {
+        // Expand buffer in 20KB increments (or just enough to fit new data)
+        size_t newAlloc = state.size;
+        while (newAlloc < newTotal) {
+            newAlloc += preallocSize;
+        }
+        if (newAlloc > maxUploadSize) newAlloc = maxUploadSize;
+        const auto newBuffer = static_cast<uint8_t *>(heap_caps_realloc(state.buffer, newAlloc, MALLOC_CAP_SPIRAM));
+        if (!newBuffer) {
+            heap_caps_free(state.buffer);
+            uploadStates.erase(filename);
+            request->send(500, "text/plain", "PSRAM reallocation failed\n");
+            return;
+        }
+        state.buffer = newBuffer;
+        state.size = newAlloc;
+    }
+    memcpy(state.buffer + state.offset, data, len);
+    state.offset += len;
+    if (final) {
+        // Save buffer to SPIFFS as image file
+        String savePath = findFreeFileSlot();
+        File imgFile = SPIFFS.open(savePath, "w");
+        if (!imgFile) {
+            request->send(500, "text/plain", "Failed to open file for writing: " + savePath + "\n");
+            heap_caps_free(state.buffer);
+            uploadStates.erase(filename);
+            return;
+        }
+        const size_t written = imgFile.write(state.buffer, state.offset);
+        imgFile.close();
+        heap_caps_free(state.buffer);
+        uploadStates.erase(filename);
+        if (written != state.offset) {
+            request->send(500, "text/plain", "Failed to write complete image. Written: " + String(written) + "\n");
+        } else {
+            EventBus::instance().publish<API_ShowImageEvent>(savePath);
+        }
+    }
+
+    printImageUploadStates();
 }
 
 void WebApi::onShowMessageRequest(AsyncWebServerRequest *request) {
@@ -350,9 +388,11 @@ void WebApi::onDiagRequest(AsyncWebServerRequest *request) {
 }
 
 void WebApi::tick() {
+    constexpr uint32_t uploadTimeout = 5000; // Discard ongoing uploads with no activity for 5 seconds
+
     // Clean up any abandoned uploads (e.g. client disconnected)
     for (auto it = uploadStates.begin(); it != uploadStates.end(); ) {
-        if (millis() - it->second.lastActivityTime < 30000) {
+        if (millis() - it->second.lastActivityTime < uploadTimeoutz) {
             ++it;
             continue;
         }
