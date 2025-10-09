@@ -38,4 +38,5 @@ You can then either manually upload this binary to Wokwi together with the `wokw
 
 ## Acknowledgements
 
-- [GeekMagic-S3-Frigate-Event-Viewer](https://github.com/Marijn0/GeekMagic-S3-Frigate-Event-Viewer) by [@Marijn0](https://github.com/Marijn0/) was used as a template and re-written using FreeRTOS and LVGL.
+- Hardware designed and assembled by [GeekMagic](https://github.com/GeekMagicClock/GeekMagic-S3)
+- [GeekMagic-S3-Frigate-Event-Viewer](https://github.com/Marijn0/GeekMagic-S3-Frigate-Event-Viewer) by [Marijn0](https://github.com/Marijn0/) was used as a template and re-written using FreeRTOS and LVGL.
