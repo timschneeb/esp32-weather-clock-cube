@@ -25,7 +25,7 @@ pio run -t upload       # Upload firmware
 ```
 ### UI development
 
-When adding or changing XML markup files in `lib/gui`, you must re-generate the C sources in that folder using LVGL-Editor or their CLI.
+When adding or changing XML markup files in `lib/gui`, you must re-generate the C sources in that folder using [LVGL-Editor](https://lvgl.io/editor) or their CLI.
 Do not edit the generated files directly (file name ending in `_gen`).
 
 ### Wokwi Simulator support
