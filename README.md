@@ -5,8 +5,6 @@ ESP32-S3 firmware for displaying current time, date, weather, and image notifica
 
 <img src="meta/demo.jpg" width="150" />
 
----
-
 ## Features
 
 - Support for the built-in capacitive touch button on top of the chassis to toggle power
