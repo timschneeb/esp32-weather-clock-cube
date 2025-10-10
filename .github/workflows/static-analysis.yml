@@ -1,0 +1,58 @@
+name: PlatformIO Static Analysis
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static-analysis:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+
+      - name: Install PlatformIO
+        run: pip install --upgrade platformio
+
+      - name: Run PlatformIO Static Analysis
+        run: pio check --fail-on-defect=high --output-format=xml > pio-check-report.xml || true
+
+      - name: Generate Markdown summary from static analysis
+        run: |
+          python3 <<'EOF'
+          import xml.etree.ElementTree as ET
+          import sys
+          
+          tree = ET.parse('pio-check-report.xml')
+          root = tree.getroot()
+          summary = ['# PlatformIO Static Analysis Report\n']
+          defect_count = 0
+          for file in root.findall('.//file'):
+              filename = file.get('name')
+              for error in file.findall('error'):
+                  defect_count += 1
+                  severity = error.get('severity', 'unknown').capitalize()
+                  message = error.get('msg', 'No message')
+                  line = error.get('line', '?')
+                  summary.append(f'- **{severity}** in `{filename}` at line {line}: {message}')
+          if defect_count == 0:
+              summary.append('✅ No issues found!')
+          with open('pio-check-summary.md', 'w') as f:
+              f.write('\n'.join(summary))
+          EOF
+
+      - name: Add summary to GitHub Actions job summary
+        run: cat pio-check-summary.md >> $GITHUB_STEP_SUMMARY
+
+      - name: Upload static analysis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: pio-check-report
+          path: pio-check-report.xml
