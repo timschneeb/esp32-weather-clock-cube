@@ -22,7 +22,7 @@ jobs:
         run: pip install --upgrade platformio
 
       - name: Build with PlatformIO
-        run: pio run -t build
+        run: pio run
 
       - name: Upload firmware artifacts
         uses: actions/upload-artifact@v4
