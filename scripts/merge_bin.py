@@ -1,7 +1,6 @@
 Import("env")
 
 APP_BIN = "$BUILD_DIR/${PROGNAME}.bin"
-MERGED_BIN = "$BUILD_DIR/${PROGNAME}_merged.bin"
 BOARD_CONFIG = env.BoardConfig()
 
 
@@ -23,31 +22,40 @@ def merge_bin(source, target, env):
         flash_mode = "dout"
 
     # Run esptool to merge images into a single binary
-    env.Execute(
-        " ".join(
-            [
-                "$PYTHONEXE",
-                "$OBJCOPY",
-                "--chip",
-                BOARD_CONFIG.get("build.mcu", "esp32"),
-                "merge_bin",
-                "-o",
-                MERGED_BIN,
-                "--flash_mode",
-                flash_mode,
-                "--flash_freq",
-                flash_freq,
-                "--flash_size",
-                flash_size,
-            ] +
-            [
-                "0x0", "$BUILD_DIR/bootloader.bin",
-                "0x8000", "$BUILD_DIR/partitions.bin",
-                "0x10000", APP_BIN,
-                "0x670000", "$BUILD_DIR/spiffs.bin"
-            ]
+    def merge(output, partitions):
+        env.Execute(
+            " ".join(
+                [
+                    "$PYTHONEXE",
+                    "$OBJCOPY",
+                    "--chip",
+                    BOARD_CONFIG.get("build.mcu", "esp32"),
+                    "merge_bin",
+                    "-o",
+                    output,
+                    "--flash_mode",
+                    flash_mode,
+                    "--flash_freq",
+                    flash_freq,
+                    "--flash_size",
+                    flash_size,
+                ] + partitions
+            )
         )
-    )
+
+    merge("$BUILD_DIR/${PROGNAME}_merged_native.bin", [
+        "0x1000", "$BUILD_DIR/bootloader.bin",
+        "0x8000", "$BUILD_DIR/partitions.bin",
+        "0x10000", APP_BIN,
+        "0x670000", "$BUILD_DIR/spiffs.bin"
+    ])
+
+    merge("$BUILD_DIR/${PROGNAME}_merged_wokwi_simulator.bin", [
+        "0x0", "$BUILD_DIR/bootloader.bin",
+        "0x8000", "$BUILD_DIR/partitions.bin",
+        "0x10000", APP_BIN,
+        "0x670000", "$BUILD_DIR/spiffs.bin"
+    ])
 
 # Add a post action that runs esptoolpy to merge available flash images
 env.AddPostAction(APP_BIN , merge_bin)
