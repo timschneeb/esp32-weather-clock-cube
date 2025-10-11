@@ -1,7 +1,8 @@
 #include "Backlight.h"
 
-#include "Config.h"
 #include <Arduino.h>
+
+#include "Config.h"
 #include "Settings.h"
 
 Backlight::Backlight() {

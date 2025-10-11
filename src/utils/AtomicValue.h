@@ -18,12 +18,12 @@ public:
     AtomicValue(const T& v) : value(v) {}
 
     void store(const T& v) {
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard lock(mtx);
         value = v;
     }
 
     T load() const {
-        std::lock_guard<std::mutex> lock(mtx);
+        std::lock_guard lock(mtx);
         return value;
     }
 

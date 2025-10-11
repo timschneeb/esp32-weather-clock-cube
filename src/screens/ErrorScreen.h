@@ -2,6 +2,7 @@
 #define ERRORSCREEN_H
 
 #include "Screen.h"
+
 #include <Arduino.h>
 
 class ErrorScreen final : public Screen {

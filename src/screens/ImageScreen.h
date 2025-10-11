@@ -4,7 +4,6 @@
 #include "Screen.h"
 
 #include <Arduino.h>
-#include <lvgl.h>
 
 class ImageScreen final : public Screen {
 public:

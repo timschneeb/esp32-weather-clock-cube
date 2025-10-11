@@ -16,8 +16,8 @@ public:
     void tick();
 
     // save function for click event
-    void attachClick(OnClickEventHandler newFunction);
-    void attachLongPressStart(OnClickEventHandler newFunction);
+    void attachClick(const OnClickEventHandler &newFunction);
+    void attachLongPressStart(const OnClickEventHandler &newFunction);
 
     bool touchDetected = false;
 

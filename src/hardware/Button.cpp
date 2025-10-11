@@ -18,11 +18,11 @@ void Button::tick() {
 }
 
 // save function for click event
-void Button::attachClick(const OnClickEventHandler newFunction) {
+void Button::attachClick(const OnClickEventHandler &newFunction) {
     onClick = newFunction;
 }
 
-void Button::attachLongPressStart(const OnClickEventHandler newFunction) {
+void Button::attachLongPressStart(const OnClickEventHandler &newFunction) {
     onLongPress = newFunction;
 }
 

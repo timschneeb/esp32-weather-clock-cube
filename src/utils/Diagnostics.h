@@ -5,7 +5,8 @@
 #ifndef DIAGNOSTICS_H
 #define DIAGNOSTICS_H
 
-#include <ArduinoJson.h>
+#include <Arduino.h>
+
 /*
  * CONFIG_FREERTOS_USE_TRACE_FACILITY=y must be set in sdkconfig to use this
  * class. Additionally, CONFIG_FREERTOS_GENERATE_RUN_TIME_STATS=y provides
@@ -19,10 +20,7 @@ public:
     static void printGlobalHeapWatermark();
     static void printHeapUsage();
     static void printHeapUsageSafely();
-
     static String collectHeapUsage();
-
-    static JsonDocument getTasksJson(bool print = false);
 };
 
 

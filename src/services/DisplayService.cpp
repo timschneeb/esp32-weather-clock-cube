@@ -13,7 +13,6 @@
 #include "Settings.h"
 #include "event/EventBus.h"
 #include "event/Events.h"
-#include "misc/lv_timer.h"
 #include "lvgl/LvglDisplayAdapter.h"
 #include "services/NetworkService.h"
 #include "screens/ApModeScreen.h"
@@ -21,7 +20,6 @@
 #include "screens/ErrorScreen.h"
 #include "screens/ImageScreen.h"
 #include "screens/Screen.h"
-#include "screens/DebugScreen.h"
 #include "screens/LoadingScreen.h"
 #include "utils/Diagnostics.h"
 #include "utils/Environment.h"
@@ -40,7 +38,7 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     backlight.wake();
     backlight.setBrightness(1);
 
-    const auto footer = line > 0 ? String(func) + "+" + String(line) : String(func) + "\nin " + String(file);
+    const auto footer = (line > 0 ? String(func) + "+" + String(line) : String(func)) + "\nin " + String(file);
     tft.panic(msg, footer.c_str());
 
     Diagnostics::printBacktrace();
