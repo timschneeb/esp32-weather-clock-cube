@@ -5,12 +5,13 @@
 #ifndef SETTINGS_H
 #define SETTINGS_H
 
-#include <Preferences.h>
 #include <Arduino.h>
 #include <atomic>
 
 #include "utils/AtomicValue.h"
 #include "utils/Macros.h"
+
+class Preferences;
 
 /**
  * X macro: type(name, default)
@@ -37,8 +38,9 @@
 class Settings {
     SINGLETON(Settings)
 public:
+    ~Settings();
     void load();
-    void save();
+    void save() const;
 
     // Member declarations
 #define DECL_STRING(name, def) AtomicValue<String> name;
@@ -50,7 +52,7 @@ public:
 #undef DECL_STRING
 
 private:
-    Preferences preferences;
+    Preferences* preferences;
 };
 
 #endif // SETTINGS_H

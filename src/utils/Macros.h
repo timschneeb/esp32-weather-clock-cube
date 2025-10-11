@@ -9,7 +9,6 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include <esp_log.h>
-#include <Esp.h>
 #include <freertos/task.h>
 
 #define SINGLETON(name) \

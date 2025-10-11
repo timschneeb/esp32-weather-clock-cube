@@ -6,6 +6,7 @@
 #include "WebService.h"
 
 #include <ArduinoJson.h>
+#include <ESPAsyncWebServer.h>
 #include <SPIFFS.h>
 #include <Update.h>
 
@@ -22,29 +23,33 @@
 
 using namespace ArduinoJson;
 
-WebService::WebService(): Task("WebServices", 4096, 1), server(80) {
-    server.serveStatic("/styles.css", SPIFFS, "/styles.css");
-    server.serveStatic("/scripts.js", SPIFFS, "/scripts.js");
-    server.serveStatic("/events", SPIFFS, "/events");
-    server.serveStatic("/icons", SPIFFS, "/icons");
+WebService::WebService(): Task("WebServices", 4096, 1), server(new AsyncWebServer(80)) {
+    server->serveStatic("/styles.css", SPIFFS, "/styles.css");
+    server->serveStatic("/scripts.js", SPIFFS, "/scripts.js");
+    server->serveStatic("/events", SPIFFS, "/events");
+    server->serveStatic("/icons", SPIFFS, "/icons");
 
 #define BIND_CB(method) std::bind(&WebService::method, this, std::placeholders::_1)
 #define BIND_UPLOAD_CB(method) std::bind(&WebService::method, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5, std::placeholders::_6)
-    server.on("/", HTTP_GET, BIND_CB(onRootRequest));
-    server.on("/save", HTTP_POST, BIND_CB(onSaveRequest));
-    server.on("/update", HTTP_GET, BIND_CB(onUpdateRequest));
-    server.on("/update", HTTP_POST, BIND_CB(onUpdatePostRequest), BIND_UPLOAD_CB(onUpdatePostUpload));
-    server.on("/delete_all", HTTP_GET, BIND_CB(onDeleteAllRequest));
-    server.on("/show_image", HTTP_GET, BIND_CB(onShowImageRequest));
-    server.on("/show_image", HTTP_POST, BIND_CB(onShowImagePostRequest), BIND_UPLOAD_CB(onShowImagePostUpload));
-    server.on("/show_message", HTTP_GET, BIND_CB(onShowMessageRequest));
-    server.on("/reboot", HTTP_GET, BIND_CB(onRebootRequest));
-    server.on("/keepalive", HTTP_GET, BIND_CB(onKeepAliveRequest));
-    server.on("/diag", HTTP_GET, BIND_CB(onDiagRequest));
+    server->on("/", HTTP_GET, BIND_CB(onRootRequest));
+    server->on("/save", HTTP_POST, BIND_CB(onSaveRequest));
+    server->on("/update", HTTP_GET, BIND_CB(onUpdateRequest));
+    server->on("/update", HTTP_POST, BIND_CB(onUpdatePostRequest), BIND_UPLOAD_CB(onUpdatePostUpload));
+    server->on("/delete_all", HTTP_GET, BIND_CB(onDeleteAllRequest));
+    server->on("/show_image", HTTP_GET, BIND_CB(onShowImageRequest));
+    server->on("/show_image", HTTP_POST, BIND_CB(onShowImagePostRequest), BIND_UPLOAD_CB(onShowImagePostUpload));
+    server->on("/show_message", HTTP_GET, BIND_CB(onShowMessageRequest));
+    server->on("/reboot", HTTP_GET, BIND_CB(onRebootRequest));
+    server->on("/keepalive", HTTP_GET, BIND_CB(onKeepAliveRequest));
+    server->on("/diag", HTTP_GET, BIND_CB(onDiagRequest));
 #undef BIND_UPLOAD_CB
 #undef BIND_CB
 
-    server.begin();
+    server->begin();
+}
+
+WebService::~WebService() {
+    delete server;
 }
 
 [[noreturn]] void WebService::run()

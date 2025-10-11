@@ -5,8 +5,10 @@
 #ifndef WEBINTERFACE_H
 #define WEBINTERFACE_H
 
+class AsyncWebServer;
+class AsyncWebServerRequest;
+
 #include <Arduino.h>
-#include <ESPAsyncWebServer.h>
 #include <map>
 
 #include "Task.h"
@@ -15,12 +17,13 @@
 class WebService final : public Task {
     SINGLETON(WebService)
 public:
+    ~WebService() override;
 
 protected:
     [[noreturn]] void run() override;
 
 private:
-    AsyncWebServer server;
+    AsyncWebServer* server;
 
     struct UploadState {
         uint8_t* buffer = nullptr;

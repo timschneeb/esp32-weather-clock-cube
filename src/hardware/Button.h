@@ -1,9 +1,9 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-#define BUTTON2_HAS_STD_FUNCTION
+class Button2;
 
-#include <Button2.h>
+#include <functional>
 
 #include "Config.h"
 
@@ -12,6 +12,8 @@ typedef std::function<void()> OnClickEventHandler;
 class Button {
 public:
     Button();
+    ~Button();
+
     void begin();
     void tick();
 
@@ -22,9 +24,9 @@ public:
     bool touchDetected = false;
 
 private:
-    Button2 button2;
+    Button2* button2;
     int threshold = TOUCH_THRESHOLD; // ESP32S3
-    byte buttonState = HIGH;
+    uint8_t buttonState = 1;
     OnClickEventHandler onClick = nullptr;
     OnClickEventHandler onLongPress = nullptr;
 };
