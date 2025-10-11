@@ -20,19 +20,13 @@
     private: \
         name();
 
-#ifdef GET_TASK_STACK_INFO
-#define LOG_VERBOSE(TAG,format,...) ESP_LOGV (TAG,"[S:%d] " format, uxTaskGetStackHighWaterMark(NULL), ##__VA_ARGS__);
-#define LOG_DEBUG(TAG,format,...) ESP_LOGD (TAG,"[S:%d] " format, uxTaskGetStackHighWaterMark(NULL), ##__VA_ARGS__);
-#define LOG_INFO(TAG,format,...) ESP_LOGI (TAG,"[S:%d] " format, uxTaskGetStackHighWaterMark(NULL), ##__VA_ARGS__);
-#define LOG_WARN(TAG,format,...) ESP_LOGW (TAG,"[S:%d] " format, uxTaskGetStackHighWaterMark(NULL), ##__VA_ARGS__);
-#define LOG_ERROR(TAG,format,...) ESP_LOGE (TAG,"[S:%d] " format, uxTaskGetStackHighWaterMark(NULL), ##__VA_ARGS__);
-#else
-#define LOG_VERBOSE(format,...) ESP_LOGV (pcTaskGetName(NULL), format, ##__VA_ARGS__);
-#define LOG_DEBUG(format,...) ESP_LOGD (pcTaskGetName(NULL), format, ##__VA_ARGS__);
-#define LOG_INFO(format,...) ESP_LOGI (pcTaskGetName(NULL), format, ##__VA_ARGS__);
-#define LOG_WARN(format,...) ESP_LOGW (pcTaskGetName(NULL), format, ##__VA_ARGS__);
-#define LOG_ERROR(format,...) ESP_LOGE (pcTaskGetName(NULL), format, ##__VA_ARGS__);
-#endif // GET_TASK_STACK_INFO
+#define APP_LOG_TAG "fw"
+
+#define LOG_VERBOSE(format,...) ESP_LOGV (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_DEBUG(format,...) ESP_LOGD (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_INFO(format,...) ESP_LOGI (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_WARN(format,...) ESP_LOGW (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_ERROR(format,...) ESP_LOGE (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
 
 // Note: Requires DisplayService include
 #define ASSERT_OR_PANIC(x, msg) if(!(x)) { \

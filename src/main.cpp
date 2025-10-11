@@ -33,8 +33,11 @@ void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t cap
 }
 
 extern "C" void app_main() {
+    esp_log_level_set(APP_LOG_TAG, ESP_LOG_VERBOSE);
+
     initArduino();
     Serial.begin(115200);
+
     heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
 
     if (!SPIFFS.begin(true)) {
