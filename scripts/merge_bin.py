@@ -3,7 +3,6 @@ Import("env")
 APP_BIN = "$BUILD_DIR/${PROGNAME}.bin"
 BOARD_CONFIG = env.BoardConfig()
 
-
 def merge_bin(source, target, env):
     # The list contains all extra images (bootloader, partitions, eboot) and
     # the final application binary
@@ -47,15 +46,15 @@ def merge_bin(source, target, env):
         "0x1000", "$BUILD_DIR/bootloader.bin",
         "0x8000", "$BUILD_DIR/partitions.bin",
         "0x10000", APP_BIN,
-        "0x670000", "$BUILD_DIR/spiffs.bin"
+        "0x910000", "$BUILD_DIR/spiffs.bin"
     ])
 
     merge("$BUILD_DIR/${PROGNAME}_merged_wokwi_simulator.bin", [
         "0x0", "$BUILD_DIR/bootloader.bin",
         "0x8000", "$BUILD_DIR/partitions.bin",
         "0x10000", APP_BIN,
-        "0x670000", "$BUILD_DIR/spiffs.bin"
+        "0x910000", "$BUILD_DIR/spiffs.bin"
     ])
 
 # Add a post action that runs esptoolpy to merge available flash images
-env.AddPostAction(APP_BIN , merge_bin)
+env.AddPostAction("buildprog", merge_bin)

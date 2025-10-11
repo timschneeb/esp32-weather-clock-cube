@@ -32,7 +32,8 @@ void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t cap
     DIAG_EXIT_SUPPRESS_IDLE_WDT
 }
 
-void setup() {
+extern "C" void app_main() {
+    initArduino();
     Serial.begin(115200);
     heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
 
@@ -63,8 +64,4 @@ void setup() {
     NetworkService::instance().start();
     WeatherService::instance().start();
     WebService::instance().start();
-}
-
-void loop() {
-    vTaskDelay(portMAX_DELAY);
 }
