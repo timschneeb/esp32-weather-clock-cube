@@ -5,6 +5,11 @@
 #ifndef MACROS_H
 #define MACROS_H
 
+#undef LOG_LOCAL_LEVEL
+#define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
+
+#include <esp_log.h>
+
 #include <Esp.h>
 #include <freertos/task.h>
 
@@ -22,11 +27,11 @@
 
 #define APP_LOG_TAG "fw"
 
-#define LOG_VERBOSE(format,...) ESP_LOGV (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
-#define LOG_DEBUG(format,...) ESP_LOGD (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
-#define LOG_INFO(format,...) ESP_LOGI (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
-#define LOG_WARN(format,...) ESP_LOGW (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
-#define LOG_ERROR(format,...) ESP_LOGE (APP_LOG_TAG, "[%s] "#format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_VERBOSE(format,...) ESP_LOGV (APP_LOG_TAG, "[%s] " format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_DEBUG(format,...) ESP_LOGD (APP_LOG_TAG, "[%s] " format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_INFO(format,...) ESP_LOGI (APP_LOG_TAG, "[%s] " format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_WARN(format,...) ESP_LOGW (APP_LOG_TAG, "[%s] " format, pcTaskGetName(NULL),##__VA_ARGS__);
+#define LOG_ERROR(format,...) ESP_LOGE (APP_LOG_TAG, "[%s] " format, pcTaskGetName(NULL),##__VA_ARGS__);
 
 // Note: Requires DisplayService include
 #define ASSERT_OR_PANIC(x, msg) if(!(x)) { \

@@ -33,11 +33,12 @@ void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t cap
 }
 
 extern "C" void app_main() {
-    esp_log_level_set("*", ESP_LOG_WARN);
-    esp_log_level_set(APP_LOG_TAG, ESP_LOG_VERBOSE);
-
     initArduino();
     Serial.begin(115200);
+
+    esp_log_level_set("*", ESP_LOG_INFO);
+    esp_log_level_set("wifi", ESP_LOG_WARN);
+    esp_log_level_set(APP_LOG_TAG, ESP_LOG_VERBOSE);
 
     heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
 
