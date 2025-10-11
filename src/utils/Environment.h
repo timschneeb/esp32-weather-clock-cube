@@ -2,8 +2,8 @@
 // Created by tim on 01.10.25.
 //
 
-#ifndef GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_ENVIRONMENT_H
-#define GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_ENVIRONMENT_H
+#ifndef ESP32_CUBE_ENVIRONMENT_H
+#define ESP32_CUBE_ENVIRONMENT_H
 
 #include <Arduino.h>
 #include <esp_sntp.h>
@@ -37,4 +37,4 @@ namespace Environment {
     }
 }
 
-#endif //GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_ENVIRONMENT_H
+#endif //ESP32_CUBE_ENVIRONMENT_H

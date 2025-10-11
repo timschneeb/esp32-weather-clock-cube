@@ -2,8 +2,8 @@
 // Created by tim on 28.09.25.
 //
 
-#ifndef GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_NAMEDENUM_H
-#define GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_NAMEDENUM_H
+#ifndef ESP32_CUBE_NAMEDENUM_H
+#define ESP32_CUBE_NAMEDENUM_H
 #include <array>
 #include <utility>
 
@@ -153,4 +153,4 @@ const typename enum_name_traits<enum_name>::string_array_t & names<enum_name>( )
 
 #define MAKE_NAMED_ENUM_CLASS_WITH_TYPE(enum_name,enum_type,...)                       \
     _MAKE_NAMED_ENUM_WITH_TYPE_IMPL(enum_name,class,enum_type,__VA_ARGS__)
-#endif //GEEKMAGIC_S3_FRIGATE_EVENT_VIEWER_NAMEDENUM_H
+#endif //ESP32_CUBE_NAMEDENUM_H
