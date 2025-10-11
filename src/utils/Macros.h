@@ -9,6 +9,8 @@
 #define LOG_LOCAL_LEVEL ESP_LOG_VERBOSE
 
 #include <esp_log.h>
+#include <esp32-hal.h>
+#include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
 #define SINGLETON(name) \
@@ -56,5 +58,7 @@
     else \
         enableCore1WDT(); \
     LOG_WARN("Re-enabled idle WDT on core %d", xPortGetCoreID());
+
+#define constrain(amt,low,high) ((amt)<(low)?(low):((amt)>(high)?(high):(amt)))
 
 #endif //MACROS_H

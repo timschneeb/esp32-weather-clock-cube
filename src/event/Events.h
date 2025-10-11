@@ -5,7 +5,7 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
-#include <Arduino.h>
+#include <WString.h>
 #include <memory>
 #include <type_traits>
 

@@ -5,7 +5,7 @@
 #ifndef ESP32_WEATHER_CLOCK_CUBE_LOADINGSCREEN_H
 #define ESP32_WEATHER_CLOCK_CUBE_LOADINGSCREEN_H
 
-#include <Arduino.h>
+#include <WString.h>
 
 #include "Screen.h"
 

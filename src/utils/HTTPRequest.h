@@ -5,7 +5,10 @@
 #ifndef ASYNCHTTPREQUESTTASK_H
 #define ASYNCHTTPREQUESTTASK_H
 
-#include <Arduino.h>
+#include <WString.h>
+
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
 
 // Forward declaration esp_http_client.h
 struct esp_http_client;

@@ -4,7 +4,7 @@
 
 #include "LoadingScreen.h"
 
-#include <Arduino.h>
+#include <WString.h>
 #include <gui.h>
 
 LoadingScreen::LoadingScreen() : LoadingScreen(String("Loading...")) {}

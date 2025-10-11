@@ -1,6 +1,6 @@
 #include "Backlight.h"
 
-#include <Arduino.h>
+#include <esp32-hal-ledc.h>
 
 #include "Config.h"
 #include "Settings.h"

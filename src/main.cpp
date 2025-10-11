@@ -1,6 +1,6 @@
-#include <Arduino.h>
 #include <esp_sntp.h>
 #include <SPIFFS.h>
+#include <WString.h>
 
 #include "Config.h"
 #include "Settings.h"
@@ -57,12 +57,12 @@ extern "C" void app_main() {
         DISP_PANIC("PSRAM init failed");
     }
 
+    // Setup time sync & callback for time synchronization
     esp_sntp_set_sync_interval(3600 * 1000); // Sync every hour
-    // Setup callback for time synchronization
     esp_sntp_set_time_sync_notification_cb([](timeval *) {
         Environment::setTimezone(Settings::instance().timezone);
     });
-    configTime(0, 0, SNTP_SERVER);
+    Environment::setupSntp();
 
 #if ENABLE_DEBUG_SERVICE == 1
     DebugService::instance().start();

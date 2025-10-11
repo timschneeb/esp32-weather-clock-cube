@@ -4,7 +4,6 @@
 
 #include "NetworkService.h"
 
-#include <esp_sntp.h>
 #include <esp_wifi.h>
 #include <esp_event.h>
 #include <esp_netif.h>
@@ -87,7 +86,7 @@ void NetworkService::ip_event_handler(void* arg, esp_event_base_t event_base, in
     for (;;) {
         if (isConnected() && !isInApMode() && !Environment::isTimeSynchronized()) {
             LOG_DEBUG("Restarting SNTP time sync...");
-            configTime(0, 0, SNTP_SERVER);
+            Environment::setupSntp();
         }
 
         if (isInApMode() || isConnected()) {

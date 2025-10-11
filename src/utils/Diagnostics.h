@@ -5,7 +5,7 @@
 #ifndef DIAGNOSTICS_H
 #define DIAGNOSTICS_H
 
-#include <Arduino.h>
+#include <WString.h>
 
 /*
  * CONFIG_FREERTOS_USE_TRACE_FACILITY=y must be set in sdkconfig to use this

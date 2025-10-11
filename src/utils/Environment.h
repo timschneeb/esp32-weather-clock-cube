@@ -5,7 +5,7 @@
 #ifndef ESP32_CUBE_ENVIRONMENT_H
 #define ESP32_CUBE_ENVIRONMENT_H
 
-#include <Arduino.h>
+#include <WString.h>
 #include <esp_sntp.h>
 
 #include "utils/Macros.h"
@@ -34,6 +34,18 @@ namespace Environment {
 
     inline bool isTimeSynchronized() {
         return time(nullptr) >= 1000000000 && sntp_get_sync_status() != SNTP_SYNC_STATUS_IN_PROGRESS;
+    }
+
+    inline void setupSntp() {
+        esp_netif_init();
+
+        if (sntp_enabled()) {
+            sntp_stop();
+        }
+
+        sntp_setoperatingmode(SNTP_OPMODE_POLL);
+        sntp_setservername(0, SNTP_SERVER);
+        sntp_init();
     }
 }
 

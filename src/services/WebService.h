@@ -8,7 +8,7 @@
 class AsyncWebServer;
 class AsyncWebServerRequest;
 
-#include <Arduino.h>
+#include <WString.h>
 #include <map>
 
 #include "Task.h"

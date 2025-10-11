@@ -1,6 +1,6 @@
 #include "DisplayService.h"
 
-#include <Arduino.h>
+#include <WString.h>
 #include <ArduinoJson.h>
 #include <esp_debug_helpers.h>
 #include <HTTPClient.h>

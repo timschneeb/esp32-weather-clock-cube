@@ -5,7 +5,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
-#include <Arduino.h>
+#include <WString.h>
 #include <esp_event.h>
 
 #include "Task.h"

@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 
-#include <Arduino.h>
+#include <WString.h>
 
 class ImageScreen final : public Screen {
 public:

@@ -3,7 +3,7 @@
 
 #include "Screen.h"
 
-#include <Arduino.h>
+#include <WString.h>
 
 class ErrorScreen final : public Screen {
 public:

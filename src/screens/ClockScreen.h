@@ -2,7 +2,7 @@
 #define CLOCKSCREEN_H
 
 #include "Screen.h"
-#include <Arduino.h>
+#include <WString.h>
 
 class ClockScreen final : public Screen {
 public:
