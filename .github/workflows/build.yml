@@ -31,7 +31,7 @@ jobs:
           python-version: '3.x'
 
       - name: Install PlatformIO
-        run: pip install --upgrade platformio
+        run: pip install --upgrade platformio intelhex
 
       - name: Build with PlatformIO
         run: pio run
