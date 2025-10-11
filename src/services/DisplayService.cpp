@@ -2,6 +2,7 @@
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
+#include <esp_debug_helpers.h>
 #include <HTTPClient.h>
 #include <lvgl.h>
 #include <memory>
@@ -42,11 +43,13 @@ DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
     const auto footer = line > 0 ? String(func) + "+" + String(line) : String(func) + "\nin " + String(file);
     tft.panic(msg, footer.c_str());
 
+    Diagnostics::printBacktrace();
     Diagnostics::printHeapUsageSafely();
-    /*while (true) {
+    Diagnostics::printTasks();
+
+    while (true) {
         vTaskDelay(portMAX_DELAY);
-    }*/
-    abort();
+    }
 }
 
 void DisplayService::changeScreen(std::unique_ptr<Screen> newScreen, const unsigned long timeoutSec) {

@@ -20,6 +20,9 @@ void heap_caps_alloc_failed_hook(const size_t requested_size, const uint32_t cap
     LOG_ERROR("%s was called but failed to allocate %d bytes with 0x%X capabilities", function_name, requested_size, caps);
     Diagnostics::printGlobalHeapWatermark();
     Diagnostics::printHeapUsageSafely();
+    Diagnostics::printTasks();
+
+    Diagnostics::printBacktrace();
 
     if (heap_caps_check_integrity_all(true)) {
         LOG_INFO("Heap integrity check OK");

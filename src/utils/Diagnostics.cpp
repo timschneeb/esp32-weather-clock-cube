@@ -4,6 +4,8 @@
 
 #include "Diagnostics.h"
 
+#include <esp_debug_helpers.h>
+
 #include "Macros.h"
 
 void Diagnostics::printFullHeapDump() {
@@ -16,6 +18,10 @@ void Diagnostics::printFullHeapDump() {
 
 void Diagnostics::printTasks() {
     getTasksJson(true);
+}
+
+void Diagnostics::printBacktrace() {
+    esp_backtrace_print(20);
 }
 
 void Diagnostics::printGlobalHeapWatermark() {
@@ -70,11 +76,10 @@ String Diagnostics::collectHeapUsage() {
 }
 
 JsonDocument Diagnostics::getTasksJson(const bool print) {
-    // TODO: setup FreeRTOS correctly for this
-#undef configUSE_TRACE_FACILITY
-    return JsonDocument();
+#undef configUSE_TRACE_FACILITY // TODO
 #ifndef configUSE_TRACE_FACILITY
-    esp_system_abort("configUSE_TRACE_FACILITY must be set to 1 in sdkconfig to use Diagnostics::getTasksJson()");
+    return JsonDocument();
+    // esp_system_abort("configUSE_TRACE_FACILITY must be set to 1 in sdkconfig to use Diagnostics::getTasksJson()");
 #else
     volatile UBaseType_t uxArraySize = uxTaskGetNumberOfTasks();
     auto doc = JsonDocument();

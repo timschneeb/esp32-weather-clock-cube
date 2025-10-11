@@ -15,6 +15,7 @@ class Diagnostics {
 public:
     static void printFullHeapDump();
     static void printTasks();
+    static void printBacktrace();
     static void printGlobalHeapWatermark();
     static void printHeapUsage();
     static void printHeapUsageSafely();
