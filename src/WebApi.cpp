@@ -47,10 +47,6 @@ WebApi::WebApi() : server(80) {
     server.begin();
 }
 
-void WebApi::setOnMqttConfigChanged(const OnMqttConfigChangedCb &callback) {
-    onMqttConfigChanged = callback;
-}
-
 void WebApi::onRootRequest(AsyncWebServerRequest *request) {
     const auto config = &Settings::instance();
 
@@ -66,11 +62,6 @@ void WebApi::onRootRequest(AsyncWebServerRequest *request) {
     html.replace("{{ssid}}", config->ssid);
     html.replace("{{pwd}}", config->pwd.load() != "" ? "******" : "");
     html.replace("{{pwd_exists}}", config->pwd.load() != "" ? "1" : "0");
-    html.replace("{{mqtt}}", config->mqtt);
-    html.replace("{{mqttport}}", String(config->mqttPort));
-    html.replace("{{mqttuser}}", config->mqttUser);
-    html.replace("{{mqttpass}}", config->mqttPass.load() != "" ? "******" : "");
-    html.replace("{{mqttpass_exists}}", config->mqttPass.load() != "" ? "1" : "0");
     html.replace("{{sec}}", String(config->displayDuration));
     html.replace("{{weatherApiKey}}", config->weatherApiKey.load() != "" ? "******" : "");
     html.replace("{{weatherApiKey_exists}}", config->weatherApiKey.load() != "" ? "1" : "0");
@@ -107,11 +98,6 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
 
     auto *settings = &Settings::instance();
 
-    auto oldMqttServer = settings->mqtt.load();
-    auto oldMqttPort = settings->mqttPort.load();
-    auto oldMqttUser = settings->mqttUser.load();
-    auto oldMqttPass = settings->mqttPass.load();
-
     settings->ssid = request->getParam("ssid", true)->value();
 
     String newPwd = request->getParam("pwd", true)->value();
@@ -143,27 +129,6 @@ void WebApi::onSaveRequest(AsyncWebServerRequest *request) const {
 
     if (oldBrightness != settings->brightness.load()) {
         EventBus::instance().publish<CFG_BrightnessUpdatedEvent>(settings->brightness.load());
-    }
-
-    // MQTT
-    String newMqtt, newMqttUser, newMqttPass;
-    int newMqttPort;
-    settings->mqtt = newMqtt = request->getParam("mqtt", true)->value();
-    settings->mqttPort = newMqttPort = getIntParam(request, "mqttport", 1883, 1, 65535);
-    settings->mqttUser = newMqttUser = request->getParam("mqttuser", true)->value();
-    newMqttPass = request->getParam("mqttpass", true)->value();
-
-    bool mqttPassExists = request->getParam("mqttpass_exists", true)->value() == "1";
-    if (!mqttPassExists || newMqttPass != "******") {
-        settings->mqttPass = newMqttPass;
-    }
-
-    const bool mqttConfigChanged = newMqtt != oldMqttServer ||
-                                   newMqttPort != oldMqttPort ||
-                                   newMqttUser != oldMqttUser ||
-                                   (newMqttPass != "******" && newMqttPass != oldMqttPass);
-    if (mqttConfigChanged) {
-        onMqttConfigChanged(newMqtt, newMqttPort, newMqttUser, newMqttPass != "******" ? newMqttPass : oldMqttPass);
     }
 
     LOG_DEBUG("Settings saved");

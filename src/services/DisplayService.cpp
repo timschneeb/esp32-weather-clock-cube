@@ -96,8 +96,6 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     eventBus.subscribe(EventId::API_ShowImage, displayEventQueue);
     eventBus.subscribe(EventId::API_ShowImageFromUrl, displayEventQueue);
     eventBus.subscribe(EventId::API_ShowMessage, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_MqttDisconnected, displayEventQueue);
-    eventBus.subscribe(EventId::WEB_MqttError, displayEventQueue);
     eventBus.subscribe(EventId::WEB_ShowLocalImage, displayEventQueue);
     eventBus.subscribe(EventId::CFG_Updated, displayEventQueue);
     eventBus.subscribe(EventId::CFG_BrightnessUpdated, displayEventQueue);
@@ -145,16 +143,6 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     showOverlay(args->message(), args->duration());
                     break;
                 }
-                case EventId::WEB_MqttDisconnected: {
-                    const auto reason = event->to<WEB_MqttDisconnectedEvent>()->reason();
-                    if (reason != AsyncMqttClientDisconnectReason::TCP_DISCONNECTED) {
-                        showOverlay("MQTT disconnected", 3000);
-                    }
-                    break;
-                }
-                case EventId::WEB_MqttError:
-                    changeScreen(std::unique_ptr<Screen>(new ErrorScreen(event->to<WEB_MqttErrorEvent>()->message())), 30);
-                    break;
                 case EventId::CFG_Updated:
                     showOverlay("Data updated", 10000);
                     break;

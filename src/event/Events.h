@@ -9,7 +9,6 @@
 #include <memory>
 #include <type_traits>
 
-#include "AsyncMqttClient/DisconnectReasons.hpp"
 #include "utils/NamedEnum.h"
 #include "utils/EventMacros.h"
 
@@ -24,8 +23,6 @@ MAKE_NAMED_ENUM_CLASS(EventId,
     API_ShowImage,
     API_ShowImageFromUrl,
     API_ShowMessage,
-    WEB_MqttDisconnected,
-    WEB_MqttError,
     WEB_ShowLocalImage,
 
     /* WeatherService */
@@ -61,8 +58,6 @@ REGISTER_EVENT(API_KeepAlive, (unsigned long, now));
 REGISTER_EVENT(API_ShowImage, (String, filename));
 REGISTER_EVENT(API_ShowImageFromUrl, (String, url));
 REGISTER_EVENT(API_ShowMessage, (String, message), (unsigned int, duration));
-REGISTER_EVENT(WEB_MqttDisconnected, (AsyncMqttClientDisconnectReason, reason));
-REGISTER_EVENT(WEB_MqttError, (String, message));
 REGISTER_EVENT(WEB_ShowLocalImage, (String, filename));
 
 REGISTER_EVENT_NOARGS(WEA_ForecastUpdated);

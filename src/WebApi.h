@@ -9,18 +9,13 @@
 #include <ESPAsyncWebServer.h>
 #include <map>
 
-typedef std::function<void(const String& server, int port, const String& user, const String& pass)> OnMqttConfigChangedCb;
-
 class WebApi final {
 public:
     WebApi();
-
     void tick();
-    void setOnMqttConfigChanged(const OnMqttConfigChangedCb &callback);
 
 private:
     AsyncWebServer server;
-    OnMqttConfigChangedCb onMqttConfigChanged;
 
     struct UploadState {
         uint8_t* buffer = nullptr;

@@ -22,10 +22,6 @@
 #define FOR_EACH_PROPERTY(STRING,INT,FLOAT) \
     STRING(ssid, "") \
     STRING(pwd, "") \
-    STRING(mqtt, "") \
-    INT(mqttPort, 1883) \
-    STRING(mqttUser, "") \
-    STRING(mqttPass, "") \
     INT(displayDuration, 30) \
     STRING(weatherApiKey, "") \
     STRING(weatherCity, "") \
