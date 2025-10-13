@@ -24,8 +24,6 @@
 #include "utils/Diagnostics.h"
 #include "utils/Environment.h"
 
-DisplayService::DisplayService() : Task("DisplayService", 12288, 2) {}
-
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     LOG_ERROR("'%s' at %s+%d in %s", msg, func, line, file);
 

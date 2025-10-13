@@ -8,8 +8,8 @@
 #include "Task.h"
 #include "utils/Macros.h"
 
-class DebugService final : public Task {
-    SINGLETON(DebugService)
+class DebugService final : public Task<4096, Priority::Minimum> {
+    TASK_NO_CTOR(DebugService)
 protected:
     [[noreturn]] void run() override;
 };

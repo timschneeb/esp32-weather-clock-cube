@@ -11,8 +11,8 @@
 #include "utils/HTTPRequest.h"
 #include "utils/Macros.h"
 
-class WeatherService final : public Task {
-    SINGLETON(WeatherService)
+class WeatherService final : public Task<4096, Priority::Background> {
+    TASK_NO_CTOR(WeatherService)
 protected:
     [[noreturn]] void run() override;
 

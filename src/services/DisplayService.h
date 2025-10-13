@@ -14,9 +14,8 @@
 
 #define DISP_PANIC(msg) DisplayService::instance().panic(msg, __func__, __LINE__, __FILE__);
 
-class DisplayService final : public Task {
-    SINGLETON(DisplayService)
-
+class DisplayService final : public Task<12288, Priority::Normal> {
+    TASK_NO_CTOR(DisplayService)
 public:
     [[noreturn]] void panic(const char* msg, const char* func, int line, const char* file);
     void changeScreen(std::unique_ptr<Screen> newScreen, unsigned long timeoutSec = 0);

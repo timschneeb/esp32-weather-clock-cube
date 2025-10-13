@@ -15,8 +15,6 @@
 #include "Settings.h"
 #include "utils/Macros.h"
 
-WeatherService::WeatherService() : Task("WeatherService", 4096, 1) {}
-
 bool WeatherService::findMinMaxForecast(JsonDocument doc, const String &date, float &minTemp, float &maxTemp) {
     minTemp = 999.0f;
     maxTemp = -999.0f;

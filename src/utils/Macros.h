@@ -13,7 +13,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/task.h>
 
-#define SINGLETON(name) \
+#define _SINGLETON_BASE(name) \
     public: \
         static name& instance() \
         { \
@@ -22,8 +22,27 @@
         } \
         name(name const&) = delete; \
         void operator=(name const&)  = delete; \
-    private: \
-        name();
+    private:
+
+#define SINGLETON(name) \
+    _SINGLETON_BASE(name) \
+    name();
+
+#define SINGLETON_NO_CTOR(name) \
+    _SINGLETON_BASE(name) \
+    name() = default;
+
+#define _DEF_TASK_NAME(name) \
+    protected: \
+        const char* taskName() override { return #name; }
+
+#define TASK(name) \
+    _DEF_TASK_NAME(name) \
+    SINGLETON(name)
+
+#define TASK_NO_CTOR(name) \
+    _DEF_TASK_NAME(name) \
+    SINGLETON_NO_CTOR(name)
 
 #define APP_LOG_TAG "fw"
 

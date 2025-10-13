@@ -22,8 +22,6 @@ constexpr int WIFI_CONNECT_MAX_ATTEMPTS = 15;
 bool NetworkService::s_isConnected = false;
 bool NetworkService::s_isInApMode = false;
 
-NetworkService::NetworkService() : Task("NetworkService", 4096, 1) {}
-
 bool NetworkService::isConnected() {
     return s_isConnected;
 }

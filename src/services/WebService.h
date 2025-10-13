@@ -14,8 +14,8 @@ class AsyncWebServerRequest;
 #include "Task.h"
 #include "utils/Macros.h"
 
-class WebService final : public Task {
-    SINGLETON(WebService)
+class WebService final : public Task<4096, Priority::Background> {
+    TASK(WebService)
 public:
     ~WebService() override;
 

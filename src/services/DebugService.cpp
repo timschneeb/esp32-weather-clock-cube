@@ -8,8 +8,6 @@
 
 #define DEBUG_DUMP_INTERVAL_MS 10000
 
-DebugService::DebugService() : Task("DebugService", 4096, 1) {}
-
 void DebugService::run() {
     for (;;) {
         Diagnostics::printHeapUsage();

@@ -23,7 +23,7 @@
 
 using namespace ArduinoJson;
 
-WebService::WebService(): Task("WebServices", 4096, 1), server(new AsyncWebServer(80)) {
+WebService::WebService() : Task(), server(new AsyncWebServer(80)) {
     server->serveStatic("/styles.css", SPIFFS, "/styles.css");
     server->serveStatic("/scripts.js", SPIFFS, "/scripts.js");
     server->serveStatic("/events", SPIFFS, "/events");

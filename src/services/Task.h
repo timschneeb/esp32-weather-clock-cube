@@ -35,6 +35,16 @@
 ///   /* ... */
 /// };
 /// \endcode
+///
+namespace Priority
+{
+    constexpr UBaseType_t Minimum = 1;
+    constexpr UBaseType_t Background = 2;
+    constexpr UBaseType_t Normal = 3;
+    constexpr UBaseType_t Realtime = 10;
+};
+
+template<uint32_t stackDepth, UBaseType_t priority>
 class Task {
 public:
     virtual ~Task() { kill(); }
@@ -42,7 +52,7 @@ public:
     /// \returns FreeRTOS task handle if the task has been started; `nullptr` otherwise.
     TaskHandle_t handle() const { return handle_.load(); }
     /// \returns Task name.
-    const char* taskName() const { return name; }
+    virtual const char* taskName() = 0;
 
     /// Starts the task using default parameters.
     virtual void start() { spawn(); }
@@ -50,8 +60,7 @@ public:
     virtual void stop() { kill(); }
 
 protected:
-    Task(const char *name, const uint32_t stackDepth, const uint32_t priority)
-        : name(name), stackDepth(stackDepth), priority(priority) {}
+    Task() = default;
 
     /// Entry point for the task (must be overridden by the subclass and never return)
     [[noreturn]] virtual void run() = 0;
@@ -61,7 +70,7 @@ protected:
     esp_err_t spawn() {
         kill();
         TaskHandle_t handle = nullptr;
-        if (xTaskCreate(runAdapter, name, stackDepth, this, priority, &handle) != pdTRUE) {
+        if (xTaskCreate(runAdapter, taskName(), stackDepth, this, priority, &handle) != pdTRUE) {
             return ESP_ERR_NO_MEM;
         }
         handle_.store(handle);
@@ -74,7 +83,7 @@ protected:
     esp_err_t spawnPinned(const BaseType_t cpu) {
         kill();
         TaskHandle_t handle = nullptr;
-        if (xTaskCreatePinnedToCore(runAdapter, name, stackDepth, this, priority, &handle, cpu) !=
+        if (xTaskCreatePinnedToCore(runAdapter, taskName(), stackDepth, this, priority, &handle, cpu) !=
             pdTRUE) {
             return ESP_ERR_NO_MEM;
         }
@@ -97,10 +106,6 @@ protected:
     }
 
 private:
-    const char* name;
-    uint32_t stackDepth;
-    uint32_t priority;
-
     std::atomic<TaskHandle_t> handle_{nullptr};
 
     static void runAdapter(void *self) {

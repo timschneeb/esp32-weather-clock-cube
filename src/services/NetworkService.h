@@ -11,8 +11,8 @@
 #include "Task.h"
 #include "utils/Macros.h"
 
-class NetworkService final : public Task {
-    SINGLETON(NetworkService)
+class NetworkService final : public Task<4096, Priority::Background> {
+    TASK_NO_CTOR(NetworkService)
 public:
     static bool isConnected();
     static bool isInApMode();
