@@ -1,0 +1,8 @@
+{
+  "name": "esp_lcd_qemu_rgb",
+  "version": "1.0.0",
+  "description": "Framebuffer driver for emulated ESP32 LCD RGB interface in QEMU",
+  "frameworks": "espidf",
+  "platforms": "espressif32",
+  "headers": "esp_lcd_qemu_rgb.h"
+}

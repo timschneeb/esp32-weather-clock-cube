@@ -3,11 +3,12 @@
 
 #include <lvgl.h>
 #include <memory>
+#include <WString.h>
 
 #include "Task.h"
 #include "hardware/Backlight.h"
 #include "hardware/Button.h"
-#include "hardware/TFT.h"
+#include "hardware/IDisplay.h"
 #include "lvgl/LvglDisplayAdapter.h"
 #include "screens/Screen.h"
 #include "utils/Macros.h"
@@ -15,8 +16,9 @@
 #define DISP_PANIC(msg) DisplayService::instance().panic(msg, __func__, __LINE__, __FILE__);
 
 class DisplayService final : public Task<12288, Priority::Normal> {
-    TASK_NO_CTOR(DisplayService)
+    TASK(DisplayService)
 public:
+    ~DisplayService() override;
     [[noreturn]] void panic(const char* msg, const char* func, int line, const char* file);
     void changeScreen(std::unique_ptr<Screen> newScreen, unsigned long timeoutSec = 0);
     void showOverlay(const String& message, unsigned long duration);
@@ -29,7 +31,7 @@ private:
 
     Button button;
     Backlight backlight;
-    TFT tft;
+    IDisplay* display;
 
     LvglDisplayAdapter lvglAdapter;
 

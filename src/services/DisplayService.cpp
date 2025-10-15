@@ -7,7 +7,6 @@
 #include <lvgl.h>
 #include <memory>
 #include <SPIFFS.h>
-#include <TFT_eSPI.h>
 
 #include "Config.h"
 #include "Settings.h"
@@ -24,6 +23,18 @@
 #include "utils/Diagnostics.h"
 #include "utils/Environment.h"
 
+#ifdef QEMU_EMULATION
+#include "hardware/QEMUFramebuffer.h"
+typedef QEMUFramebuffer DisplayImpl;
+#else
+#include "hardware/TFT.h"
+typedef TFT DisplayImpl;
+#endif
+
+DisplayService::DisplayService() : display(new DisplayImpl) {}
+
+DisplayService::~DisplayService() { delete display; }
+
 [[noreturn]] void DisplayService::panic(const char *msg, const char *func, const int line, const char *file) {
     LOG_ERROR("'%s' at %s+%d in %s", msg, func, line, file);
 
@@ -37,7 +48,7 @@
     backlight.setBrightness(1);
 
     const auto footer = (line > 0 ? String(func) + "+" + String(line) : String(func)) + "\nin " + String(file);
-    tft.panic(msg, footer.c_str());
+    display->panic(msg, footer.c_str());
 
     Diagnostics::printBacktrace();
     Diagnostics::printHeapUsageSafely();
@@ -84,7 +95,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
     });
 
     lvglAdapter.init(240, 240);
-    lvglAdapter.setOnFlushCallback(std::bind(&TFT::push, tft, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+    lvglAdapter.setOnFlushCallback(std::bind(&IDisplay::push, display, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
     backlight.setBrightness(Settings::instance().brightness);
 
     const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));

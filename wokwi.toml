@@ -1,4 +1,4 @@
 [wokwi]
 version = 1
-firmware = '.pio/build/esp32-s3-devkitm-1/firmware_merged_wokwi_simulator.bin'
+firmware = '.pio/build/esp32-s3-devkitm-1/firmware_merged.bin'
 elf = '.pio/build/esp32-s3-devkitm-1/firmware.elf'

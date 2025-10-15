@@ -71,6 +71,7 @@ void NetworkService::ip_event_handler(void* arg, esp_event_base_t event_base, in
 [[noreturn]] void NetworkService::run() {
     esp_netif_init();
     esp_event_loop_create_default();
+#ifndef QEMU_EMULATION
     esp_netif_create_default_wifi_sta();
     esp_netif_create_default_wifi_ap();
 
@@ -127,6 +128,11 @@ void NetworkService::ip_event_handler(void* arg, esp_event_base_t event_base, in
         }
         vTaskDelay(pdMS_TO_TICKS(1500));
     }
+#else
+    while (true) {
+        vTaskDelay(pdMS_TO_TICKS(10000));
+    }
+#endif
 }
 
 void NetworkService::enterAPMode() {

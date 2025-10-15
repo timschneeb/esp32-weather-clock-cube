@@ -44,6 +44,8 @@ extern "C" void app_main() {
 
     heap_caps_register_failed_alloc_callback(heap_caps_alloc_failed_hook);
 
+    // TODO
+#ifndef QEMU_EMULATION
     if (!SPIFFS.begin(true)) {
         LOG_ERROR("Failed to mount SPIFFS! Did you forget to flash the filesystem?");
         // SPIFFS is currently not setup on the Wokwi emulator, so don't panic there
@@ -51,6 +53,7 @@ extern "C" void app_main() {
             DISP_PANIC("SPIFFS init failed");
         }
     }
+#endif
 
     if (!psramInit()) {
         LOG_ERROR("Failed to initialize PSRAM");

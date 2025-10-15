@@ -30,6 +30,8 @@ def merge_bin(source, target, env):
                     "--chip",
                     BOARD_CONFIG.get("build.mcu", "esp32"),
                     "merge_bin",
+                    "--fill-flash-size",
+                    flash_size,
                     "-o",
                     output,
                     "--flash_mode",
@@ -42,14 +44,7 @@ def merge_bin(source, target, env):
             )
         )
 
-    merge("$BUILD_DIR/${PROGNAME}_merged_native.bin", [
-        "0x1000", "$BUILD_DIR/bootloader.bin",
-        "0x8000", "$BUILD_DIR/partitions.bin",
-        "0x10000", APP_BIN,
-        "0x910000", "$BUILD_DIR/spiffs.bin"
-    ])
-
-    merge("$BUILD_DIR/${PROGNAME}_merged_wokwi_simulator.bin", [
+    merge("$BUILD_DIR/${PROGNAME}_merged.bin", [
         "0x0", "$BUILD_DIR/bootloader.bin",
         "0x8000", "$BUILD_DIR/partitions.bin",
         "0x10000", APP_BIN,

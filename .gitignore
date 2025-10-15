@@ -5,6 +5,9 @@
 .vscode/ipch
 .build_cache
 /build
+/build.log
+
+/managed_components
 
 # Old sdkconfig
 /sdkconfig*.old
