@@ -12,6 +12,7 @@
 #include "lvgl/LvglDisplayAdapter.h"
 #include "screens/Screen.h"
 #include "utils/Macros.h"
+#include "utils/Power.h"
 
 #define DISP_PANIC(msg) DisplayService::instance().panic(msg, __func__, __LINE__, __FILE__);
 
@@ -27,8 +28,10 @@ protected:
     [[noreturn]] void run() override;
 
 private:
+    void onSleepStateChanged(bool sleeping) const;
     void displayImageFromAPI(const String &url);
 
+    Power power;
     Button button;
     Backlight backlight;
     IDisplay* display;

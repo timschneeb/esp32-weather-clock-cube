@@ -5,6 +5,8 @@
 #include <lvgl.h>
 
 #include "LvSPIFFS.h"
+#include "display/lv_display_private.h"
+#include "misc/lv_timer_private.h"
 #include "services/DisplayService.h"
 
 static OnFlushCallback onFlushCallback;
@@ -30,6 +32,14 @@ void LvglDisplayAdapter::init(const uint32_t width, const uint32_t height) {
 
     lv_display_set_buffers(display, drawBuf1, drawBuf2, bufferSize, LV_DISPLAY_RENDER_MODE_FULL);
     gui_init("S:/");
+}
+
+void LvglDisplayAdapter::suspend() const {
+    lv_timer_pause(display->refr_timer);
+}
+
+void LvglDisplayAdapter::resume() const {
+    lv_timer_resume(display->refr_timer);
 }
 
 void LvglDisplayAdapter::setOnFlushCallback(const OnFlushCallback& callback) {

@@ -44,7 +44,7 @@ DisplayService::~DisplayService() { delete display; }
         lvglAdapter.panic();
     }
 
-    backlight.wake();
+    power.wake();
     backlight.setBrightness(1);
 
     const auto footer = (line > 0 ? String(func) + "+" + String(line) : String(func)) + "\nin " + String(file);
@@ -90,13 +90,15 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
 [[noreturn]] void DisplayService::run() {
     button.begin();
     button.attachClick([this] {
-        backlight.handlePowerButton();
+        power.toggleManualSleep();
         lastKeepaliveTime = 0;
     });
 
     lvglAdapter.init(240, 240);
     lvglAdapter.setOnFlushCallback(std::bind(&IDisplay::push, display, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, std::placeholders::_5));
+
     backlight.setBrightness(Settings::instance().brightness);
+    power.setOnSleepStateChanged(std::bind(&DisplayService::onSleepStateChanged, this, std::placeholders::_1));
 
     const QueueHandle_t displayEventQueue = xQueueCreate(32, sizeof(EventPtr*));
     EventBus &eventBus = EventBus::instance();
@@ -135,17 +137,23 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
                     showOverlay("IP: " + String(NetworkService::getStaIpString()), 3000);
                     break;
                 case EventId::API_KeepAlive:
-                    if (!backlight.isSleepingByPowerButton()) {
-                        backlight.wake();
+                    if (!power.isSleepingByPowerButton()) {
+                        power.wake();
                     }
                     lastKeepaliveTime = millis();
                     break;
                 case EventId::API_ShowImage: {
+                    if (!power.isSleeping())
+                        break;
+
                     const auto filename = event->to<API_ShowImageEvent>()->filename();
                     changeScreen(std::unique_ptr<Screen>(new ImageScreen(filename, true)), Settings::instance().displayDuration);
                     break;
                 }
                 case EventId::API_ShowImageFromUrl:
+                    if (!power.isSleeping())
+                        break;
+
                     displayImageFromAPI(event->to<API_ShowImageFromUrlEvent>()->url());
                     break;
                 case EventId::API_ShowMessage: {
@@ -176,18 +184,31 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
             }
         }
 
-        if (currentScreen) {
+        if (currentScreen && !power.isSleeping()) {
             currentScreen->update();
         }
 
         if (lastKeepaliveTime > 0 && millis() - lastKeepaliveTime > KEEPALIVE_TIMEOUT) {
-            backlight.sleep();
+            power.sleep();
             lastKeepaliveTime = 0;
         }
 
         lvglAdapter.tick();
         button.tick();
-        vTaskDelay(5 / portTICK_PERIOD_MS);
+        vTaskDelay((Power::isSleeping() ? 100 : 5) / portTICK_PERIOD_MS);
+    }
+}
+
+void DisplayService::onSleepStateChanged(const bool sleeping) const {
+    backlight.setBrightness(Settings::instance().brightness);
+    if (sleeping) {
+        lv_timer_enable(false);
+        lvglAdapter.suspend();
+        LOG_DEBUG("LVGL suspended")
+    } else {
+        lvglAdapter.resume();
+        lv_timer_enable(true);
+        LOG_DEBUG("LVGL resumed")
     }
 }
 

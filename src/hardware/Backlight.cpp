@@ -1,11 +1,12 @@
 #include "Backlight.h"
 
+#include "../utils/Power.h"
+#include "Settings.h"
+
 #ifndef QEMU_EMULATION
 #include <esp32-hal-ledc.h>
 #include "Config.h"
 #endif
-
-#include "Settings.h"
 
 Backlight::Backlight() {
 #ifndef QEMU_EMULATION
@@ -16,7 +17,7 @@ Backlight::Backlight() {
 }
 
 void Backlight::setBrightness(int brt) const {
-    if (isManuallySleeping || isAutomaticallySleeping) {
+    if (Power::isSleeping()) {
         brt = 0;
     }
     brt = constrain(brt, 0, 255);
@@ -25,29 +26,4 @@ void Backlight::setBrightness(int brt) const {
 #else
     LOG_DEBUG("Backlight set to %d", brt);
 #endif
-}
-
-void Backlight::sleep() {
-    isAutomaticallySleeping = true;
-    setBrightness(0);
-}
-
-void Backlight::wake() {
-    isAutomaticallySleeping = false;
-    isManuallySleeping = false;
-    setBrightness(Settings::instance().brightness);
-}
-
-void Backlight::handlePowerButton() {
-    isManuallySleeping = !isManuallySleeping;
-    isAutomaticallySleeping = false;
-    setBrightness(Settings::instance().brightness);
-}
-
-bool Backlight::isSleeping() const {
-    return isManuallySleeping || isAutomaticallySleeping;
-}
-
-bool Backlight::isSleepingByPowerButton() const {
-    return isManuallySleeping;
 }

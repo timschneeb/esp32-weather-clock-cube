@@ -14,6 +14,8 @@ class LvglDisplayAdapter {
 public:
     LvglDisplayAdapter();
     void init(uint32_t width, uint32_t height);
+    void suspend() const;
+    void resume() const;
 
     /// Kill & block LVGL flush task (on panic)
     static void panic();

@@ -14,6 +14,7 @@
 #include "services/NetworkService.h"
 #include "Settings.h"
 #include "utils/Macros.h"
+#include "utils/Power.h"
 
 bool WeatherService::findMinMaxForecast(JsonDocument doc, const String &date, float &minTemp, float &maxTemp) {
     minTemp = 999.0f;
@@ -43,7 +44,7 @@ String WeatherService::currentLocalDate(const int dayOffset) {
 
 [[noreturn]] void WeatherService::run() {
     for (;;) {
-        if (NetworkService::isInApMode() || !NetworkService::isConnected()) {
+        if (Power::isSleeping() || NetworkService::isInApMode() || !NetworkService::isConnected()) {
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
