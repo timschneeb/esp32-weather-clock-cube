@@ -33,3 +33,7 @@ void QEMUFramebuffer::panic(const char *msg, const char *footer) {
     // Not implemented
 }
 
+void QEMUFramebuffer::clear() {
+    // Not implemented
+}
+

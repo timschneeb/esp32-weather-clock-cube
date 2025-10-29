@@ -17,6 +17,7 @@ public:
     ~QEMUFramebuffer() override;
     void push(uint16_t *buffer, uint32_t x, uint32_t y, uint32_t w, uint32_t h) override;
     void panic(const char *msg, const char *footer) override;
+    void clear() override;
 
 private:
     esp_lcd_panel_handle_t panel_handle = nullptr;

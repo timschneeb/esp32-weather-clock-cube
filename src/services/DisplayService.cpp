@@ -204,6 +204,7 @@ void DisplayService::onSleepStateChanged(const bool sleeping) const {
     if (sleeping) {
         lv_timer_enable(false);
         lvglAdapter.suspend();
+        display->clear();
         LOG_DEBUG("LVGL suspended")
     } else {
         lvglAdapter.resume();

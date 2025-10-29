@@ -31,3 +31,7 @@ void TFT::panic(const char *msg, const char *footer) {
     tft.println(footer);
     tft.flush();
 }
+
+void TFT::clear() {
+    tft.fillScreen(TFT_BLACK);
+}
