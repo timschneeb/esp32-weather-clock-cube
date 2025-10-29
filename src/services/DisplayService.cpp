@@ -195,7 +195,7 @@ void DisplayService::showOverlay(const String& message, const unsigned long dura
 
         lvglAdapter.tick();
         button.tick();
-        vTaskDelay((Power::isSleeping() ? 100 : 5) / portTICK_PERIOD_MS);
+        vTaskDelay((Power::isSleeping() ? 25 : 5) / portTICK_PERIOD_MS);
     }
 }
 
